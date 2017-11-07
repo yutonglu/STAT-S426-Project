@@ -1,0 +1,25 @@
+---
+title: "Proposal"
+author: "Ashley Lu,Liang Zou"
+date: "November 6, 2017"
+output: pdf_document
+---
+<!---
+# The goal of this project: 
+  mainly from Introduction and conclusion
+  
+# Model desciption:
+## (a) explain the model: what is this model? why we use in on finance?
+## (b) Why we need Gibbs sampler to simulate the data? What is advantage?
+
+# Data:
+## Where we find the data and what condition we set up for it? explain the data. 
+
+# Apply the method on the data
+## main defintion
+## run the model
+## analysis the result
+
+# The result we anticipate
+
+--->
