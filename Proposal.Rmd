@@ -1,9 +1,38 @@
 ---
-title: "Proposal"
+title: |
+    | Project Proposal
+    | Baysien option pricing using mixed normal heteroskedasticity models
 author: "Ashley Lu,Liang Zou"
 date: "November 6, 2017"
 output: pdf_document
 ---
+# 1. Introduction
+   The option pricing using asymmetric mixed normal heteroscedasticity models help us better fit actual observed prices. We consider to perform inference and price options in a Baysian framework through compute posterior moments of the model parameters by sampling from the poterior density. The method unlike classical inference that need conditions on maximum likelihood estimates, it will computed using the risk neutral predicitve price densities by product of the Bayesian sampler. An application is using the real data on the S&P 500 index and index options. We plan to perform Baysien inference on a two compont asymennetric normal mixture model using the available data. In section 2, we will introduce what data we use and what condition we set up.In section 3,we describe the model and explain how to use it to simulate data.Finally, in section 4, we outline the goals and anticipation of this project. 
+
+# 2. Data for S&P 500 index
+   In this project, we use data on call options on the S&P 500 index. Our data covers the period from 2007(?) to 2016(?) We also impose the following restriction on our sample: First, we only consider weekly data and choose the Wednesday.Second, we only choose the day which has daily traded volume of at least 100(?) contrasts. Thirdly, we include the risk free rate for each year.(?)In total, we end up with a sample of ______ call options.
+
+   
+# 3. Mixed normal heteroskedasticity models
+ 
+  blah blah blah
+  model introduction and gibbs sampler mentioned
+ 
+# 4. Conclusion 
+   For this project, we plan to explore the mixed normal heteroscedasticity models and using Bayesian inference to simulate the data of S&P 500 stretch across 10 years. we willsimulate the data by using Gibss Sampler and we anticipate the result should be when pricing a rich sample of options on the index, Bayesian methods yield similar pricing errors measured in dollar and implied standard deviation losses, and it turns out that the impact of parameter uncertainty is minor. Therefore, when it comes to option pricing where large amounts of data are available, the choice of the inference method is unimportant. 
+  
+ 
+# References
+
+[1] Rombouts,J and Stentoft,L.(2014) "Bayesian option pricing using mixed normal heteroskedasticity models" 
+    in Computational *Statistics & Data Analysis*, 76,588-605
+
+
+
+
+
+
+
 <!---
 # The goal of this project: 
   mainly from Introduction and conclusion
