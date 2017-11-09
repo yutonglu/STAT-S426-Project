@@ -15,7 +15,8 @@ output: pdf_document
    
 # 3. Mixed normal heteroskedasticity models
  
-  blah blah blah
+  blah blah blah 
+  
   model introduction and gibbs sampler mentioned
  
 # 4. Conclusion 
