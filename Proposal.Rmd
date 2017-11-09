@@ -25,7 +25,7 @@ output: pdf_document
  
 # References
 
-[1] Rombouts,J and Stentoft,L.(2014) "Bayesian option pricing using mixed normal heteroskedasticity models" 
+[1] Rombouts, J. and Stentoft, L.(2014) "Bayesian option pricing using mixed normal heteroskedasticity models" 
     in Computational *Statistics & Data Analysis*, 76,588-605
 
 
