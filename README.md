@@ -11,5 +11,8 @@ https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972
 * Spreadsheet of data from WSJ
 http://quotes.wsj.com/index/SPX/historical-prices
 
+* Free risk-rate (Department of Treasury)
+https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017
+
 * OptionMetrics ??
 
