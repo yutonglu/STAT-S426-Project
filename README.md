@@ -14,5 +14,5 @@ http://quotes.wsj.com/index/SPX/historical-prices
 * Free risk-rate (Department of Treasury)
 https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017
 
-* OptionMetrics ??
+
 
