@@ -20,21 +20,36 @@ Since we also known each year's risk free rate $r_t$, and $\nu_t$ is the unit ri
 \[P(\epsilon_t|\mathscr{F}_{t-1})=\sum_{k=1}^K {\pi_k\Phi(\frac{\epsilon_t-\mu_k}{\sigma_{k,t}})}\] where
 \[\sigma_{k,t}=\sqrt{\omega_k+\alpha(\epsilon_{t-1}+\gamma_k \sigma_{k,t-1})^2+\beta_k\sigma^2_{k,t-1}}\]
 For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
-\[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2})\]
-  We will simulate the data by using Gibbs Sampler. The join posterior distribution based on the MN-NGARCH model is given by 
-\[\varphi(G^T,\nu_t,\mu,\theta,\pi|R)\propto \varphi(\nu_t) \varphi(\mu) \varphi(\theta) \varphi(\pi)\]
-where $\varphi(\nu_t), \varphi(\mu), \varphi(\theta), \varphi(\pi)$ are the corresponding prior densities. Suppose the parameters are independent to each other. We will use full conditionals of each parameter to compute Gibbs Sampler. 
-Through plots and diagnostic we will see the convergence of data and how long it will converge to the target posterior distributions. Meanwhile, we will try to minimize the impact of starting values in the final result. 
+\[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
+  We will simulate the data by using the Gibbs Sampler. The join posterior distribution based on the MN-NGARCH model is given by 
+\[\varphi(G^T,\nu_t,\mu,\theta,\pi|R) \propto \varphi(\nu_t) \varphi(\mu) \varphi(\theta) \varphi(\pi)\]
+where $\varphi(\nu_t), \varphi(\mu), \varphi(\theta), \varphi(\pi)$ are the corresponding prior densities. Suppose the parameters are independent to each other. We will use full conditionals of each parameter to compute the Gibbs Sampler. 
+Through plots and diagnostic we want to verify the convergence of data and how long it will possibly converge to the target posterior distributions. Meanwhile, we will try to minimize the impact of starting values in the final result. 
 
 # 3. Data for S&P 500 Index
-In this project, we use data on call options on the S&P 500 index. Our data covers 10 years period from Dec,31,2006 to Dec, 31,2016. We also impose the following restriction on our sample: First, we only consider weekly data and choose the Wednesday. Second, we include the risk free rate for each year from US Department of Treasury. In total, we end up with a sample of 252 call options.
+In this project, we use data on call options on the [S&P 500 index](https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972&enddate=Dec+28%2C+2011&num=30&ei=dxwBWqmEFozKjAG-_IyQDQ). 
+Our data covers 10 years period from Dec,31,2006 to Dec,31,2016. We also impose the following restriction on our sample: First, we only consider weekly data and choose the option prices on every Wednesday since it minimizes the impact from weekend trading. Second, we include  [Daily Treasury Yield Curve Rates](https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017) 
+as the risk free rates from US Department of the Treasury corresponding to the days of option prices. In total, we end up with a sample of 252 call options.
 
 
 # 4. Conclusion 
-For this project, we plan to explore the mixed normal heteroscedasticity models and use Bayesian inference to simulate the data of S&P 500 across 10 years. Specifically, we will simulate the data by using Gibss Sampler and we anticipate the Bayesian methods yield similar pricing errors measured in dollar and implied standard deviation losses when pricing a rich sample of options on the index, and it turns out that the impact of parameter uncertainty is minor. Therefore, when large amount of data are available, the choice of the inference method to predict the price of options is unimportant. 
+In this project, we plan to explore the mixed normal heteroscedasticity models and use Bayesian inference to simulate the data of S&P 500 across 10 years. Specifically, we will simulate the data by using Gibss Sampler and we anticipate the Bayesian methods yield similar pricing errors measured in dollar and implied standard deviation losses when pricing a rich sample of options on the index, and it turns out that the impact of parameter uncertainty is minor. Therefore, when large amount of data are available, the choice of the inference method to predict the price of options is unimportant. 
 
 
 # References
 
 [1] Rombouts, J. and Stentoft, L.(2014) "Bayesian option pricing using mixed normal heteroskedasticity models" 
-    in Computational *Statistics & Data Analysis*, 76,588-605
+    in *Computational Statistics & Data Analysis*, 76,588-605
+
+[2] Standard & Poor's 500 index. Retrived from 
+    https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972&enddate=Dec+28%2C+2011&num=30&ei=dxwBWqmEFozKjAG-_IyQDQ    
+
+[3] Daily Treasury Yield Curve Rates. US Department of the Treasury. Retrived from
+    https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017
+    
+    
+    
+    
+    
+    
+    
