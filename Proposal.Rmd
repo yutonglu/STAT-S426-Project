@@ -10,30 +10,56 @@ output:
       in_header: ApproxRegMacros.tex
 ---
 
+
 # 1. Introduction
-  The option pricing using asymmetric mixed normal heteroscedasticity models helps us better fit actual observed prices. We consider performing inferences and price options in a Baysian framework through compute posterior moments of the model parameters by sampling from the poterior density. Unlike classical inference that need conditions on maximum likelihood estimates, the method utilizes the risk neutral predicitve price densities by product of the Bayesian sampler. An application is using the real data on the S&P 500 index and index options. We plan to perform Baysien inference on a two-component asymennetric normal mixture model by using the available data. In section 2, we will describe the model and explain how to use it to simulate data. In section 3, we will introduce what data we use and what conditions we set up. Finally, in section 4, we outline the goals and anticipations of this project. 
+  The option pricing using asymmetric mixed normal heteroscedasticity models helps us better fit actual observed 
+prices. We consider performing inferences and price options in a Baysian framework through compute posterior moments 
+of the model parameters by sampling from the poterior density. Unlike classical inference that need conditions on 
+maximum likelihood estimates, the method utilizes the risk neutral predicitve price densities by product of the 
+Bayesian sampler. An application is using the real data on the S&P 500 index and index options. We plan to perform 
+Baysien inference on a two-component asymennetric normal mixture model by using the available data. In section 2, we 
+will describe the model and explain how to use it to simulate data. In section 3, we will introduce what data we use 
+and what conditions we set up. Finally, in section 4, we outline the goals and anticipations of this project. 
+
 
 # 2. Model's Framework
    Let $\mathscr{F}_t$ denote the information set up to time t. Then the underlying return process $R_t=ln(\frac{S_t}{S_{t-1}})$,where $S_t$ is the index level on each day t. Then
 \[R_t = r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)+\epsilon_t\] 
-Since we also known each year's risk free rate $r_t$, and $\nu_t$ is the unit risk premium, $\Psi_t$ is conditional cumulant generating function of $\epsilon_t$, so we can compute their conditional distribution given by combination of $K$ distributions 
+Since we also known each year's risk free rate $r_t$, and $\nu_t$ is the unit risk premium, $\Psi_t$ is conditional 
+cumulant generating function of $\epsilon_t$, so we can compute their conditional distribution given by combination of $K$ distributions 
 \[P(\epsilon_t|\mathscr{F}_{t-1})=\sum_{k=1}^K {\pi_k\Phi(\frac{\epsilon_t-\mu_k}{\sigma_{k,t}})}\] where
 \[\sigma_{k,t}=\sqrt{\omega_k+\alpha(\epsilon_{t-1}+\gamma_k \sigma_{k,t-1})^2+\beta_k\sigma^2_{k,t-1}}\]
 For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
 \[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
-  We will simulate the data by using the Gibbs Sampler. The join posterior distribution based on the MN-NGARCH model is given by 
-\[\varphi(G^T,\nu_t,\mu,\theta,\pi|R) \propto \varphi(\nu_t) \varphi(\mu) \varphi(\theta) \varphi(\pi)\]
-where $\varphi(\nu_t), \varphi(\mu), \varphi(\theta), \varphi(\pi)$ are the corresponding prior densities. Suppose the parameters are independent to each other. We will use full conditionals of each parameter to compute the Gibbs Sampler. 
-Through plots and diagnostic we want to verify the convergence of data and how long it will possibly converge to the target posterior distributions. Meanwhile, we will try to minimize the impact of starting values in the final result. 
+Also, the likelihood function given $G_t$ and $R$ is
+\[\ L(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
+We will estimate the parameters by using the Gibbs Sampler. The join posterior distribution based on the MN-NGARCH 
+model is given by 
+\[\varphi(G^T,\nu_t,\mu,\theta,\pi|R) \propto \varphi(\nu_t) \varphi(\mu) \varphi(\theta) \varphi(\pi) L(\xi|G^T,R)\]
+where $\varphi(\nu_t), \varphi(\mu), \varphi(\theta), \varphi(\pi)$ are the corresponding prior densities. 
+Suppose the parameters are independent to each other. We will use full conditionals of each parameter to compute the 
+Gibbs Sampler. Through plots and diagnostic we want to verify the convergence of data and how long it will possibly 
+converge to the target posterior distributions. Meanwhile, we will try to minimize the impact of starting values in 
+the final result. 
+
 
 # 3. Data for S&P 500 Index
 In this project, we use data on call options on the [S&P 500 index](https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972&enddate=Dec+28%2C+2011&num=30&ei=dxwBWqmEFozKjAG-_IyQDQ). 
-Our data covers 10 years period from Dec,31,2006 to Dec,31,2016. We also impose the following restriction on our sample: First, we only consider weekly data and choose the option prices on every Wednesday since it minimizes the impact from weekend trading. Second, we include  [Daily Treasury Yield Curve Rates](https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017) 
-as the risk free rates from US Department of the Treasury corresponding to the days of option prices. In total, we end up with a sample of 252 call options.
+Our data covers 10 years period from Dec,31,2006 to Dec,31,2016. We also impose the following restriction on our 
+sample: First, we only consider weekly data and choose the option prices on every Wednesday since it minimizes the 
+impact from weekend trading. Second, we include  
+[Daily Treasury Yield Curve Rates](https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017) 
+as the risk free rates from US Department of the Treasury corresponding to the days of option prices. 
+In total, we end up with a sample of 252 call options.
 
 
 # 4. Conclusion 
-In this project, we plan to explore the mixed normal heteroscedasticity models and use Bayesian inference to simulate the data of S&P 500 across 10 years. Specifically, we will simulate the data by using Gibss Sampler and we anticipate the Bayesian methods yield similar pricing errors measured in dollar and implied standard deviation losses when pricing a rich sample of options on the index, and it turns out that the impact of parameter uncertainty is minor. Therefore, when large amount of data are available, the choice of the inference method to predict the price of options is unimportant. 
+In this project, we plan to explore the mixed normal heteroscedasticity models and use Bayesian inference to 
+approximate the coefficients of S&P 500 across 10 years. Specifically, we will estimate the parameters by using Gibss 
+Sampler and we anticipate the Bayesian methods yield similar pricing errors measured in dollar and implied standard 
+deviation losses when pricing a rich sample of options on the index, and it turns out that the impact of parameter 
+uncertainty is minor. Therefore, when large amount of data are available, the choice of the inference method to 
+predict the price of options is unimportant. 
 
 
 # References
