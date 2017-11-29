@@ -99,11 +99,17 @@ legend('bottomright',legend = c("Real data", 'MCMC prediction'), lty = c(1,1), c
 ```
 
 
-```{r effective sample size and plot}
+```{r acf effective sample size and plot}
+acf(THD.MCMC[,1],lag.max=100, main = 'MCMC')
+
 effectiveSize(THD.MCMC[,1])
 
 thd.mcmc <- mcmc(THD.MCMC[,1])
-summary(thd.mcmc)
+# summary(thd.mcmc)
 plot(thd.mcmc, las = 1)
 
 ```
+
+
+
+
