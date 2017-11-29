@@ -1,0 +1,89 @@
+---
+title: |
+  | Project Report
+  | Baysien Option Pricing Using Mixed Normal Heteroskedasticity Models
+author: "Ashley Lu, Liang Zou"
+date: "11/28/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+
+```
+
+
+```{r load data}
+
+setwd("~/Desktop/STAT-S 426/STAT-S426-Project")
+SP500 <- read.csv("Data.txt",header = F)
+R = c()
+for (i in 2:nrow(SP500)){
+  R = c(R, log(SP500$V2[i]/SP500$V2[i-1]))
+}
+
+```
+
+```{r plot of R}
+plot(R,type = 'l')
+boxplot(R)
+summary(R)
+
+length(subset(R, R > 0.01))
+length(subset(R, R > 0.002 & R < 0.01))
+
+length(subset(R, R > -0.01 & R < 0.002))
+length(subset(R, R < -0.01))
+```
+    
+    
+    
+    
+```{r prior of mixture}
+# K = # of mixture normal models 
+# T = total # of days
+# pi = proportion of each normal model
+# mu = mean of each normal
+# theta = variance of each normal
+# v_t ~ Uniform[0,1]
+# Gt = k -> which normal model
+
+mu = c(0.01,0.002,-0.01)
+s2 = c(0.0001, 0.0001, 0.0001)
+p = c(1/3, 1/3, 1/3)
+K = 3 # the number of mixed normal models
+
+```
+
+
+
+
+```{r MCMC}
+
+th = R[1]# the first day of R
+THD.MCMC <- NULL
+S <- length(R)
+
+for(s in 1:S) {
+  pz.unnorm <- p*dnorm(th, mu, sqrt(s2))
+  z <- sample(1:K ,1,prob=pz.unnorm) 
+    # Note that the sample() function in R normalizes the weights in pz.unnorm. 
+    # Otherwise we would have to do it by hand.
+  th <- rnorm(1, mu[z], sqrt(s2[z]))
+  THD.MCMC <- rbind(THD.MCMC, c(th,z))
+}
+
+
+
+```
+
+
+
+
+```{r diagnostics}
+
+plot(THD.MCMC[,1], type = 'l', las = 1, ylab = 'R')
+
+lines(R,type = 'l', col = 2)
+
+```
