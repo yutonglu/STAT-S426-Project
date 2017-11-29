@@ -55,7 +55,7 @@ length(subset(R, R < -0.008))
 # v_t ~ Uniform[0,1]
 # Gt = k -> which normal model
 
-mu = c(0.009, 0)
+mu = c(0.009, -0.001)
 s2 = c(0.0001, 0.0001)
 p = c(0.6, 0.4)
 K = 2 # the number of mixed normal models
