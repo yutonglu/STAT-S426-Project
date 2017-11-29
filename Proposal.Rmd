@@ -31,7 +31,7 @@ cumulant generating function of $\epsilon_t$, so we can compute their conditiona
 \[\sigma_{k,t}=\sqrt{\omega_k+\alpha(\epsilon_{t-1}+\gamma_k \sigma_{k,t-1})^2+\beta_k\sigma^2_{k,t-1}}\]
 For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
 \[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
-Also, the likelihood function given $G_t$ and $R$ is
+Also, the likelihood function given $G^T$ and $R$ is
 \[\ L(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
 We will estimate the parameters by using the Gibbs Sampler. The join posterior distribution based on the MN-NGARCH 
 model is given by 
