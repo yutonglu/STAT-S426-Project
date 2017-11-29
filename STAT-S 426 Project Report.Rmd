@@ -29,6 +29,10 @@ plot(R,type = 'l')
 boxplot(R)
 summary(R)
 
+plot(density(R),las = 1, xlab = 'R')
+abline(v=0.009, col = 3)
+abline(v= -0.01, col = 5)
+
 length(subset(R, R > 0.01))
 length(subset(R, R > 0.002 & R < 0.01))
 
