@@ -9,6 +9,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = F)
+library(coda)
 
 ```
 
@@ -98,5 +99,11 @@ legend('bottomright',legend = c("Real data", 'MCMC prediction'), lty = c(1,1), c
 ```
 
 
+```{r effective sample size and plot}
+effectiveSize(THD.MCMC[,1])
 
+thd.mcmc <- mcmc(THD.MCMC[,1])
+summary(thd.mcmc)
+plot(thd.mcmc, las = 1)
 
+```
