@@ -32,7 +32,7 @@ for (i in 2:nrow(SP500)){
 
 
 
-```{r plot of R}
+```{r plot of R, include = F}
 plot(R, type = 'l')
 boxplot(R, las = 1)
 summary(R)
@@ -101,7 +101,7 @@ for (i in 1:length(R)){
   else {model.num = c(model.num,2)}
 }
 
-cbind(Post.Gt.1, Post.Gt.2, model.num)
+# cbind(Post.Gt.1, Post.Gt.2, model.num)
 
 x1 = length(subset(model.num, model.num == 1))
 x2 = length(subset(model.num, model.num == 2))
@@ -160,11 +160,32 @@ for (i in 2:10000){
 
 ```{r diagnostics}
 
-plot(density(trace[,1]), type = 'l', ylab = expression(mu[1]))
-plot(density(trace[,2]), type = 'l', ylab = expression(mu[2]))
+plot(density(trace[,1]), type = 'l', ylab = expression(p(mu)),las = 1,xlim = c(-0.020,0.020),
+     main = expression('Posterior density of'~mu))
+lines(density(trace[,2]), type = 'l',col=2)
+legend('topleft',legend = c(expression(mu[1]),expression(mu[2])), 
+       col = c(1,2), lty = c(1,1), cex = 1.5)
 
-plot(density(trace[,5]), type = 'l', ylab = expression(pi[1]))
+plot(density(trace[,3]), type = 'l', ylab = expression(p(sigma^2)), las = 1, xlim = c(5e-5,3.5e-4),
+     main = expression('Posterior density of'~sigma^2))
+lines(density(trace[,4]), type = 'l', col = 2)
+legend('topright',legend = c(expression(sigma[1]^2),expression(sigma[2]^2)), 
+       col = c(1,2), lty = c(1,1), cex = 1.5)
 
+
+plot(density(trace[,5]), type = 'l', ylab = expression(p(pi)),xlim = c(0.2,0.8), las = 1,
+     main = expression('Posterior density of'~pi))
+lines(density(1-trace[,5]), col=2)
+legend('topleft',legend = c(expression(pi[1]),expression(pi[2])), 
+       col = c(1,2), lty = c(1,1),cex = 1.5)
+
+```
+
+```{r inference}
+
+post.inf = apply(trace,2,FUN = function(x){return(c(mean(x),quantile(x,c(0.025,0.975))))})
+row.names(post.inf)[1] = 'mean'
+round(post.inf, 6)
 
 
 ```
