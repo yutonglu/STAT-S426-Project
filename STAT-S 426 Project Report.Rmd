@@ -10,6 +10,8 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = F)
 library(coda)
+library(MASS)
+library(mvtnorm)
 
 ```
 
@@ -64,60 +66,119 @@ s2 = c(0.0001, 0.0001)
 p = c(0.6, 0.4)
 K = 2 # the number of mixed normal models
 
-x = seq(-0.04,0.04,0.0001)
-plot(x, p[1]*dnorm(x, mu[1], sqrt(s2[1])) + p[2]*dnorm(x, mu[2], sqrt(s2[2])), 
-      ylab = expression(p(theta)), xlab = expression(theta), type = 'l')
+interval = seq(-0.04,0.04,0.0001)
+plot(interval, p[1]*dnorm(interval, mu[1], sqrt(s2[1])) + p[2]*dnorm(interval, mu[2], sqrt(s2[2])), 
+     col = 'red', las = 1, ylab = expression(p(R)), xlab = expression(R), type = 'l')
 lines(density(R),col='green')
+legend('topright',legend = c("Mixture density","Real density"), lty = c(1,1), col = c('red','green'))
 
 ```
 
 
+```{r conditional cumulant generating function}
 
+# Fix K = 2, v_t = 0 (p. 595)
 
-```{r MCMC}
-
-th = R[1] # the first day of R (i.e. 1/4/2006)
-THD.MCMC <- NULL
-S <- length(R) - 1
-
-for(s in 1:S) {
-  pz.unnorm <- p*dnorm(th, mu, sqrt(s2))
-  z <- sample(1:K ,1, prob=pz.unnorm) 
-    # Note that the sample() function in R normalizes the weights in pz.unnorm. 
-    # Otherwise we would have to do it by hand.
-  th <- rnorm(1, mu[z], sqrt(s2[z]))
-  THD.MCMC <- rbind(THD.MCMC, c(th,z))
+Psi.k = function(u){
+  return(log(p[1]*exp(-u*mu[1] + u^2*s2[1]/2) + p[2]*exp(-u*mu[2] + u^2*s2[2]/2)))
 }
 
+Psi.vt = Psi.k(u = 0)
+Psi.vt_1 = Psi.k(u = -1)
 
+r_t = 0.0044
+
+rho_t = r_t + Psi.vt - Psi.vt_1
+
+Post.Gt.1 = p[1] * dnorm(R, mu[1] + rho_t,sqrt(s2[1]))/(p[1] * dnorm(R, mu[1] + rho_t,sqrt(s2[1])) + p[2] * dnorm(R, mu[2] + rho_t,sqrt(s2[2])))
+Post.Gt.2 = p[2] * dnorm(R, mu[2] + rho_t,sqrt(s2[2]))/(p[1] * dnorm(R, mu[1] + rho_t,sqrt(s2[1])) + p[2] * dnorm(R, mu[2] + rho_t,sqrt(s2[2])))
+
+model.num = c()
+for (i in 1:length(R)){
+  if (Post.Gt.1[i] > Post.Gt.2[i]){
+    model.num = c(model.num,1)
+  }
+  else {model.num = c(model.num,2)}
+}
+
+cbind(Post.Gt.1, Post.Gt.2, model.num)
+
+x1 = length(subset(model.num, model.num == 1))
+x2 = length(subset(model.num, model.num == 2))
+
+c(x1, x2)
+```
+
+
+
+
+```{r MCMC mixture}
+
+a <- b <- 1
+mu_0 <- 0.008
+tao_0.sq <- 0.01^2
+sigma_0.sq <- 0.01^2
+v_0 <- 1
+
+trace <- array(NA, dim = c(10000,5), dimnames=list(iteration=NULL, parameters = c('mu1', 'mu2','sigma1.sq','sigma2.sq','p')))
+trace[1,] <- tr <- c(mean(R[model.num == 1]), mean(R[model.num == 2]), 
+                     var(R[model.num == 1]), var(R[model.num == 2]), 0.5)
+
+
+x1 = length(subset(model.num, model.num == 1))
+x2 = length(subset(model.num, model.num == 2))
+
+R1 = R[model.num == 1]
+R2 = R[model.num == 2]
+
+R1.bar = mean(R[model.num == 1])
+R2.bar = mean(R[model.num == 2])
+
+
+for (i in 2:10000){
+  new.p <- rbeta(1,  x1 + a, x2 + b)
+  
+  new.sigma1.sq <- 1/rgamma(1,0.5*(v_0 + x1),0.5*(v_0*sigma_0.sq + sum((R[model.num == 1]-tr[1])^2)))
+  new.sigma2.sq <- 1/rgamma(1,0.5*(v_0 + x2),0.5*(v_0*sigma_0.sq + sum((R[model.num == 2]-tr[2])^2)))
+  
+  new.mu1 <- rnorm(1,(mu_0/tao_0.sq + x1*R1.bar/new.sigma1.sq)/(1/tao_0.sq + x1/new.sigma1.sq),
+                      sqrt(1/(1/tao_0.sq + x1/new.sigma1.sq)))
+
+  new.mu2 <- rnorm(1,(mu_0/tao_0.sq + x2*R2.bar/new.sigma2.sq)/(1/tao_0.sq + x2/new.sigma2.sq),
+                      sqrt(1/(1/tao_0.sq + x2/new.sigma2.sq)))
+  
+  trace[i,] <- tr <- c(new.mu1, new.mu2, new.sigma1.sq, new.sigma2.sq, new.p)
+  
+  }
 
 ```
+
+
 
 
 
 
 ```{r diagnostics}
 
-plot(R[-1], type = 'l', las = 1, ylab = 'R', col = 'green')
+plot(density(trace[,1]), type = 'l', ylab = expression(mu[1]))
+plot(density(trace[,2]), type = 'l', ylab = expression(mu[2]))
 
-lines(THD.MCMC[,1], type = 'l', col = 'red')
+plot(density(trace[,5]), type = 'l', ylab = expression(pi[1]))
 
-legend('bottomleft',legend = c("Real data", 'MCMC prediction'), lty = c(1,1), col = c('green','red'))
 
-error = 1/S*sum((R[-1]-THD.MCMC[,1])^2)
-round(error,6)
 
 ```
 
 
 ```{r acf effective sample size and plot}
-acf(THD.MCMC[,1],lag.max=100, main = 'MCMC')
 
-effectiveSize(THD.MCMC[,1])
+mu.mcmc <- mcmc(trace[,1:2], start = 100)
 
-thd.mcmc <- mcmc(THD.MCMC[,1])
-# summary(thd.mcmc)
-plot(thd.mcmc, las = 1)
+autocorr.plot(mu.mcmc)
+
+effectiveSize(mu.mcmc)
+
+
 
 ```
 
