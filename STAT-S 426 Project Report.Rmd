@@ -32,20 +32,26 @@ for (i in 2:nrow(SP500)){
 
 
 
-```{r plot of R, include = F}
-plot(R, type = 'l')
-boxplot(R, las = 1)
-summary(R)
+```{r plot of R}
 
-plot(density(R),las = 1, xlab = 'R')
-abline(v = 0.008, col = 3)
-abline(v = -0.001, col = 5)
+plot(R, type = 'l', las = 1)
+abline(v = length(R)/2, col = 'green', lty = 2)
+# boxplot(R, las = 1)
+# summary(R)
 
-length(subset(R, R > 0.009))
+# plot(density(R),las = 1, xlab = 'R')
+
+boxplot(list(SP2006 = R[1:round(length(R)/2)],SP2007 = R[round(length(R)/2):length(R)]),
+        las = 1, range = 0, main = 'Return in 2006 and 2007')
+
+# abline(v = 0.008, col = 3)
+# abline(v = -0.001, col = 5)
+
+# length(subset(R, R > 0.009))
 # length(subset(R, R > 0.003 & R < 0.011))
 
-length(subset(R, R > -0.002 & R < 0.009))
-length(subset(R, R < -0.002))
+# length(subset(R, R > -0.002 & R < 0.009))
+# length(subset(R, R < -0.002))
 
 ```
     
@@ -63,7 +69,7 @@ length(subset(R, R < -0.002))
 
 mu = c(0.008, -0.003)
 s2 = c(0.0001, 0.0001)
-p = c(0.6, 0.4)
+p = c(0.5, 0.5)
 K = 2 # the number of mixed normal models
 
 interval = seq(-0.04,0.04,0.0001)
@@ -115,7 +121,7 @@ c(x1, x2)
 ```{r MCMC mixture}
 
 a <- b <- 1
-mu_0 <- 0.008
+mu_0 <- mean(mu)
 tao_0.sq <- 0.01^2
 sigma_0.sq <- 0.01^2
 v_0 <- 1
@@ -198,7 +204,6 @@ mu.mcmc <- mcmc(trace[,1:2], start = 100)
 autocorr.plot(mu.mcmc)
 
 effectiveSize(mu.mcmc)
-
 
 
 ```
