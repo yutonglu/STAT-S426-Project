@@ -4,8 +4,12 @@ title: |
   | Baysien Option Pricing Using Mixed Normal Heteroskedasticity Models
 author: "Ashley Lu, Liang Zou"
 date: "11/28/2017"
-output: pdf_document
+output: 
+  pdf_document:
+     includes:
+        in_header: ApproxRegMacros.tex
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = F)
@@ -16,7 +20,8 @@ library(mvtnorm)
 ```
 
 # Introduction
-    The option pricing using asymmetric mixed normal heteroscedasticity models helps us better fit actual observed 
+
+The option pricing using asymmetric mixed normal heteroscedasticitic models helps us better fit actual observed
 prices. We consider performing inferences and price options in a Baysian framework through computing posterior
 moments of the model parameters by sampling from the poterior density. Unlike classical inference that need
 conditions on maximum likelihood estimation, the MCMC (Markov Chain Monte Carlo) method utilizes the risk neutral
@@ -26,6 +31,7 @@ by using the data between 2006 and 2007.
 
 
 # Model's Framework
+<!---
    Let $\mathscr{F}_t$ denote the information set up to time t. Then the underlying return process $R_t=ln(\frac{S_t}{S_{t-1}})$, where $S_t$ is the index level on each day t. Then
 \[R_t = r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)+\epsilon_t\] 
 Since we also know each year's risk free rate $r_t$, and $\nu_t$ is the unit risk premium, $\Psi_t$ is conditional 
@@ -42,7 +48,7 @@ In addition, we also restrict the weighted average of means from mixture normal 
 i.e. $\sum_{i=1}^{K}\pi_i*\mu_i=0$. So we can compute the mean of the last normal models $K$ in 
 $\mu_K=-\frac{\sum_{i=1}^{K-1}\pi_i*\mu_i}{\pi_K}$. For further analysis, we plan to use the simplest case 
 where $K=2$ and $\nu_t=0$.
-
+--->
 
 ```{r load data}
 
@@ -136,10 +142,11 @@ legend('topright',legend = c("Mixture density","Real density"), lty = c(1,1), co
 
 
 # 4 Initial rough estimate
-For a two-mixture normal model, we set up some information for $\mu=$ (`r mu`), $\sigma^2=$ (`r s2`)
-and $\pi=$`r p`. The mixture density seems close to the real density especially when the return is positive. 
+<!---
+For a two-mixture normal model, we set up some information for $\mu$ = (`r mu`), $\sigma^{2}$ = (`r s2`)
+and $\pi$ = (`r p`). The mixture density seems close to the real density especially when the return is positive. 
 Thus, we may begin our following computations based on this model.
-
+--->
 
 ```{r conditional cumulant generating function}
 
