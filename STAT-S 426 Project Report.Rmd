@@ -17,8 +17,6 @@ library(mvtnorm)
 
 
 ```{r load data}
-
-setwd("~/Desktop/STAT-S 426/STAT-S426-Project")
 SP500.2006 <- read.csv("2006.txt",header = F)
 SP500.2007 <- read.csv("2007.txt",header = F)
 SP500 <- rbind(SP500.2006,SP500.2007)
