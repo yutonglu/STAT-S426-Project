@@ -15,6 +15,36 @@ library(mvtnorm)
 
 ```
 
+# Introduction
+    The option pricing using asymmetric mixed normal heteroscedasticity models helps us better fit actual observed 
+prices. We consider performing inferences and price options in a Baysian framework through computing posterior
+moments of the model parameters by sampling from the poterior density. Unlike classical inference that need
+conditions on maximum likelihood estimation, the MCMC (Markov Chain Monte Carlo) method utilizes the risk neutral
+predicitve price densities by product of the Gibbs sampler. An application is using the real data on the S&P 500
+index and index options. We plan to perform Baysien inferences on a two-component asymmetric mixture normal 
+by using the data between 2006 and 2007. 
+
+
+# Model's Framework
+   Let $\mathscr{F}_t$ denote the information set up to time t. Then the underlying return process $R_t=ln(\frac{S_t}{S_{t-1}})$, where $S_t$ is the index level on each day t. Then
+\[R_t = r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)+\epsilon_t\] 
+Since we also know each year's risk free rate $r_t$, and $\nu_t$ is the unit risk premium, $\Psi_t$ is conditional 
+cumulant generating function of $\epsilon_t$, so we can compute their conditional distribution given by combination 
+of $K$ normal distributions 
+\[P(\epsilon_t|\mathscr{F}_{t-1})=\sum_{k=1}^K {\pi_k\Phi(\frac{\epsilon_t-\mu_k}{\sigma_{k,t}})}\] where
+\[\sigma_{k,t}^2=\omega_k+\alpha_k(\epsilon_{t-1}+\gamma_k \sigma_{k,t-1})^2+\beta_k\sigma^2_{k,t-1}\]
+Thus, the value of $\sigma_{k,t}^2$ depends on parameters $\theta_k=(\omega_k,\gamma_k,\alpha_k,\beta_k)$.
+For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
+\[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
+where $\mu_k$ is the average return on day t.Also, the likelihood function given $G^T$ and $R$ is
+\[\ \mathscr{L}(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
+where $\rho_t(\nu_t)=r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)$.
+Let $\pi=(\pi_1,\pi_2,...,\pi_K)$ denote the proportion of each normal model and $\sum_{i=1}^{K}\pi_i=1$
+In addition, we also restrict the weighted average of means from mixture normal models to zero.
+i.e. $\sum_{i=1}^{K}\pi_i*\mu_i=0$. So we can compute the mean of the last normal models $K$ in 
+$\mu_K=-\frac{\sum_{i=1}^{K-1}\pi_i*\mu_i}{\pi_K}$. For further analysis, we plan to use the simplest case 
+where $K=2$ and $\nu_t=0$.
+
 
 ```{r load data}
 
@@ -23,10 +53,21 @@ SP500.2006 <- read.csv("2006.txt",header = F)
 SP500.2007 <- read.csv("2007.txt",header = F)
 SP500 <- rbind(SP500.2006,SP500.2007)
 
+r = c(4.35,4.44,4.42,4.51,4.6,4.66,4.7,4.69,4.74,4.76,4.77,4.78,4.83,4.82,4.91,4.98,4.98,5.02,4.99,
+      4.97,5.07,5.05,5.15,5.22,5.30,5.29,5.26,5.22,5.16,5.11,5.07,5.06,5.07,5.03,5.02,4.99,5.00,4.89,4.87,
+      5.02,5.04,5.08,4.95,5.02,5.04,5.01,4.98,4.90,4.95,4.96,4.99,
+      4.98,5.01,5.08,5.09,5.09,5.09,5.06,5.05,4.9,4.91,4.89,4.90,4.92,4.90,4.90,4.82,4.96,4.96,4.96,4.99,
+      4.98,4.97,4.93,4.99,4.98,4.95,4.82,4.89,4.41,4.10,4.24,4.28,4.12,4.06,4.03,4.10,4.03,4.11,4.23,4.11,3.91,3.98,
+      4.04,3.71, 3.65,3.18,3.31,3.13,3.16,3.26,3.34
+      )/365
+# transfer annual rate to daily rate
+
 R = c()
 for (i in 2:nrow(SP500)){
   R = c(R, log(SP500$V2[i]/SP500$V2[i-1]))
 }
+
+
 
 ```
 
@@ -67,9 +108,9 @@ boxplot(list(SP2006 = R[1:round(length(R)/2)],SP2007 = R[round(length(R)/2):leng
 # v_t ~ Uniform[0,1]
 # Gt = k -> which normal model
 
-mu = c(0.008, -0.003)
-s2 = c(0.0001, 0.0001)
-p = c(0.5, 0.5)
+mu = c(0.008, -0.012)
+s2 = c(0.0001, 0.0002)
+p = c(0.6, 0.4)
 K = 2 # the number of mixed normal models
 
 interval = seq(-0.04,0.04,0.0001)
@@ -92,7 +133,7 @@ Psi.k = function(u){
 Psi.vt = Psi.k(u = 0)
 Psi.vt_1 = Psi.k(u = -1)
 
-r_t = 0.0044
+r_t = mean(r) #0.01
 
 rho_t = r_t + Psi.vt - Psi.vt_1
 
@@ -128,7 +169,7 @@ v_0 <- 1
 
 trace <- array(NA, dim = c(10000,5), dimnames=list(iteration=NULL, parameters = c('mu1', 'mu2','sigma1.sq','sigma2.sq','p')))
 trace[1,] <- tr <- c(mean(R[model.num == 1]), mean(R[model.num == 2]), 
-                     var(R[model.num == 1]), var(R[model.num == 2]), 0.5)
+                     var(R[model.num == 1]), var(R[model.num == 2]), x1/(x1+x2))
 
 
 x1 = length(subset(model.num, model.num == 1))
@@ -150,8 +191,13 @@ for (i in 2:10000){
   new.mu1 <- rnorm(1,(mu_0/tao_0.sq + x1*R1.bar/new.sigma1.sq)/(1/tao_0.sq + x1/new.sigma1.sq),
                       sqrt(1/(1/tao_0.sq + x1/new.sigma1.sq)))
 
-  new.mu2 <- rnorm(1,(mu_0/tao_0.sq + x2*R2.bar/new.sigma2.sq)/(1/tao_0.sq + x2/new.sigma2.sq),
-                      sqrt(1/(1/tao_0.sq + x2/new.sigma2.sq)))
+  # new.mu2 <- rnorm(1,(mu_0/tao_0.sq + x2*R2.bar/new.sigma2.sq)/(1/tao_0.sq + x2/new.sigma2.sq),
+                      # sqrt(1/(1/tao_0.sq + x2/new.sigma2.sq)))
+ # A = 
+ # b =
+  
+  # new.mu1 = rnorm(1,-A^(-1)*b,A^(-1))
+  new.mu2 = -new.mu1*new.p/(1-new.p)
   
   trace[i,] <- tr <- c(new.mu1, new.mu2, new.sigma1.sq, new.sigma2.sq, new.p)
   
@@ -161,25 +207,36 @@ for (i in 2:10000){
 
 
 
+```{r trace plot}
+plot(trace[,1],type = 'l',ylab=expression(mu[1]))
+plot(trace[,2],type = 'l',ylab=expression(mu[2]))
+
+plot(trace[,1],trace[,2],ylab=expression(mu[2]),xlab=expression(mu[1]))
+
+```
+
 
 
 
 ```{r diagnostics}
 
-plot(density(trace[,1]), type = 'l', ylab = expression(p(mu)),las = 1,xlim = c(-0.020,0.020),
+plot(density(trace[,1]), type = 'l', ylab = 'Density', xlab = expression(mu),
+     las = 1,xlim = c(-0.02,0.02),
      main = expression('Posterior density of'~mu))
 lines(density(trace[,2]), type = 'l',col=2)
 legend('topleft',legend = c(expression(mu[1]),expression(mu[2])), 
        col = c(1,2), lty = c(1,1), cex = 1.5)
 
-plot(density(trace[,3]), type = 'l', ylab = expression(p(sigma^2)), las = 1, xlim = c(5e-5,3.5e-4),
+plot(density(trace[,3]), type = 'l', ylab = 'Density', xlab = expression(sigma^2),
+     las = 1, xlim = c(5e-5,3.5e-4),
      main = expression('Posterior density of'~sigma^2))
 lines(density(trace[,4]), type = 'l', col = 2)
 legend('topright',legend = c(expression(sigma[1]^2),expression(sigma[2]^2)), 
        col = c(1,2), lty = c(1,1), cex = 1.5)
 
 
-plot(density(trace[,5]), type = 'l', ylab = expression(p(pi)),xlim = c(0.2,0.8), las = 1,
+plot(density(trace[,5]), type = 'l', ylab = 'Density', xlab = expression(pi),
+     xlim = c(0.2,0.8), las = 1,
      main = expression('Posterior density of'~pi))
 lines(density(1-trace[,5]), col=2)
 legend('topleft',legend = c(expression(pi[1]),expression(pi[2])), 
@@ -203,8 +260,11 @@ mu.mcmc <- mcmc(trace[,1:2], start = 100)
 
 autocorr.plot(mu.mcmc)
 
-effectiveSize(mu.mcmc)
+sigma.mcmc <- mcmc(trace[,3:4], start = 100)
 
+autocorr.plot(sigma.mcmc)
+
+t(as.matrix(c(effectiveSize(mu.mcmc), effectiveSize(sigma.mcmc))))
 
 ```
 
