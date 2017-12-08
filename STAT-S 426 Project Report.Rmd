@@ -72,6 +72,17 @@ for (i in 2:nrow(SP500)){
 ```
 
 
+# 3. Data for S&P 500 Index
+In this project, we use data on call options on the [S&P 500 index](https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972&enddate=Dec+28%2C+2011&num=30&ei=dxwBWqmEFozKjAG-_IyQDQ). 
+Our data covers 2 years period from Dec,31,2006 to Dec,31,2007 and compute the return. 
+We also impose the following restriction on our sample: 
+First, we only consider weekly data and choose the option prices on every Wednesday since it minimizes the 
+impact from weekend trading. Second, we include  
+[Daily Treasury Yield Curve Rates](https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017) 
+as the risk free rates from US Department of the Treasury corresponding to the days of option prices.
+We end up the return R with `r length(R)` observations.
+
+
 
 ```{r plot of R}
 
@@ -96,9 +107,11 @@ boxplot(list(SP2006 = R[1:round(length(R)/2)],SP2007 = R[round(length(R)/2):leng
 
 ```
     
-    
-    
-    
+The green dotted line represents the cut-off between the years of 2006 and 2007. Due to the Subprime mortgage crisis
+ that happened in US in the year of 2007, the fluctations of return are much larger than the return in 2006, which 
+ strengthens the difficulty on the precision of model prediction and inference.
+ 
+
 ```{r prior of mixture}
 # K = # of mixture normal models 
 # T = total # of days
@@ -120,6 +133,12 @@ lines(density(R),col='green')
 legend('topright',legend = c("Mixture density","Real density"), lty = c(1,1), col = c('red','green'))
 
 ```
+
+
+# 4 Initial rough estimate
+For a two-mixture normal model, we set up some information for $\mu=$ (`r mu`), $\sigma^2=$ (`r s2`)
+and $\pi=$`r p`. The mixture density seems close to the real density especially when the return is positive. 
+Thus, we may begin our following computations based on this model.
 
 
 ```{r conditional cumulant generating function}
@@ -153,8 +172,11 @@ for (i in 1:length(R)){
 x1 = length(subset(model.num, model.num == 1))
 x2 = length(subset(model.num, model.num == 2))
 
-c(x1, x2)
+# c(x1, x2)
 ```
+
+# Bayesian inference
+
 
 
 
@@ -271,3 +293,19 @@ t(as.matrix(c(effectiveSize(mu.mcmc), effectiveSize(sigma.mcmc))))
 
 
 
+
+
+
+
+# References
+
+[1] Rombouts, J. and Stentoft, L.(2014) "Bayesian option pricing using mixed normal heteroskedasticity models" 
+    in *Computational Statistics & Data Analysis*, 76,588-605
+
+[2] Standard & Poor's 500 index. Retrived from 
+    https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972&enddate=Dec+28%2C+2011&num=30&ei=dxwBWqmEFozKjAG-_IyQDQ    
+
+[3] Daily Treasury Yield Curve Rates. US Department of the Treasury. Retrived from
+    https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017
+    
+    
