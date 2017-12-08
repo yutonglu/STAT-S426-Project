@@ -19,7 +19,7 @@ library(mvtnorm)
 
 ```
 
-# Introduction
+# 1. Introduction
 
 The option pricing using asymmetric mixed normal heteroscedasticitic models helps us better fit actual observed
 prices. We consider performing inferences and price options in a Baysian framework through computing posterior
@@ -30,8 +30,8 @@ index and index options. We plan to perform Baysien inferences on a two-componen
 by using the data between 2006 and 2007. 
 
 
-# Model's Framework
-<!---
+# 2. Model's Framework
+
    Let $\mathscr{F}_t$ denote the information set up to time t. Then the underlying return process $R_t=ln(\frac{S_t}{S_{t-1}})$, where $S_t$ is the index level on each day t. Then
 \[R_t = r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)+\epsilon_t\] 
 Since we also know each year's risk free rate $r_t$, and $\nu_t$ is the unit risk premium, $\Psi_t$ is conditional 
@@ -41,14 +41,16 @@ of $K$ normal distributions
 \[\sigma_{k,t}^2=\omega_k+\alpha_k(\epsilon_{t-1}+\gamma_k \sigma_{k,t-1})^2+\beta_k\sigma^2_{k,t-1}\]
 Thus, the value of $\sigma_{k,t}^2$ depends on parameters $\theta_k=(\omega_k,\gamma_k,\alpha_k,\beta_k)$.
 For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
+
 \[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
 where $\mu_k$ is the average return on day t. 
 Let $\pi=(\pi_1,\pi_2,...,\pi_K)$ denote the proportion of each normal model and $\sum_{i=1}^{K}\pi_i=1$
 In addition, we also restrict the weighted average of means from mixture normal models to zero.
+
 i.e. $\sum_{i=1}^{K}\pi_i*\mu_i=0$. So we can compute the mean of the last normal models $K$ in 
 $\mu_K=-\frac{\sum_{i=1}^{K-1}\pi_i*\mu_i}{\pi_K}$. For further analysis, we plan to use the simplest case 
 where $K=2$ and $\nu_t=0$.
---->
+
 
 ```{r load data}
 SP500.2006 <- read.csv("2006.txt",header = F)
@@ -76,7 +78,7 @@ for (i in 2:nrow(SP500)){
 
 # 3. Data for S&P 500 Index
 In this project, we use data on call options on the [S&P 500 index](https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972&enddate=Dec+28%2C+2011&num=30&ei=dxwBWqmEFozKjAG-_IyQDQ). 
-Our data covers 2 years period from Dec,31,2006 to Dec,31,2007 and compute the return. 
+Our data covers 2 years period from Jan 4 2006 to Dec,31,2007 and compute the return. 
 We also impose the following restriction on our sample: 
 First, we only consider weekly data and choose the option prices on every Wednesday since it minimizes the 
 impact from weekend trading. Second, we include  
@@ -84,17 +86,19 @@ impact from weekend trading. Second, we include
 as the risk free rates from US Department of the Treasury corresponding to the days of option prices.
 Since the yield cruve rates are measured in an annual basis. We need to convert them to a daily basis 
 by dividing 365 which is the number of days in a year.
-We end up the return R with `r length(R)` observations.
+We end up the return R with `r length(SP500)` observations.
 
 
 
-```{r plot of R}
-
+```{r plot of R,fig.cap="The return process of R"}
 plot(R, type = 'l', las = 1)
 abline(v = length(R)/2, col = 'green', lty = 2)
 # boxplot(R, las = 1)
 # summary(R)
+```
 
+
+```{r boxplot ,fig.cap="Boxplot of S&P 500 each year"}
 # plot(density(R),las = 1, xlab = 'R')
 
 boxplot(list(SP2006 = R[1:round(length(R)/2)],SP2007 = R[round(length(R)/2):length(R)]),
@@ -139,13 +143,13 @@ legend('topright',legend = c("Mixture density","Real density"), lty = c(1,1), co
 ```
 
 
-# 4 Initial rough estimate
-<!---
-For a two-mixture normal model, we set up some information for $\mu$ = (`r mu`), $\sigma^{2}$ = (`r s2`)
+# 4 Initial Estimate
+
+For a two-mixture normal model, we set up some information for $\mu=(0.008,-0.012)$ , $\sigma^{2}=(1e-04,2e-04)$  
 and $\pi$ = (`r p`). The mixture density seems close to the real density especially when the return is positive. 
 Thus, we may begin our following computations based on this model.
---->
 
+`r mu`
 ```{r conditional cumulant generating function}
 
 # Fix K = 2, v_t = 0 (p. 595)
@@ -180,7 +184,7 @@ x2 = length(subset(model.num, model.num == 2))
 # c(x1, x2)
 ```
 
-# Bayesian inference
+## Bayesian inference
 
 The likelihood function given $G^T$ and $R$ is
 \[\ \mathscr{L}(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
@@ -251,7 +255,6 @@ for (i in 2:10000){
 ```{r trace plot}
 plot(trace[,1],type = 'l',ylab=expression(mu[1]))
 plot(trace[,2],type = 'l',ylab=expression(mu[2]))
-
 plot(trace[,1],trace[,2],ylab=expression(mu[2]),xlab=expression(mu[1]))
 
 ```
@@ -296,15 +299,11 @@ round(post.inf, 6)
 
 
 ```{r acf effective sample size and plot}
-
+par(mfrow=c(4,1))
 mu.mcmc <- mcmc(trace[,1:2], start = 100)
-
 autocorr.plot(mu.mcmc)
-
 sigma.mcmc <- mcmc(trace[,3:4], start = 100)
-
 autocorr.plot(sigma.mcmc)
-
 t(as.matrix(c(effectiveSize(mu.mcmc), effectiveSize(sigma.mcmc))))
 
 ```
