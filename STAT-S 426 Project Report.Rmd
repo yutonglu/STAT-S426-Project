@@ -36,9 +36,7 @@ of $K$ normal distributions
 Thus, the value of $\sigma_{k,t}^2$ depends on parameters $\theta_k=(\omega_k,\gamma_k,\alpha_k,\beta_k)$.
 For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
 \[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
-where $\mu_k$ is the average return on day t.Also, the likelihood function given $G^T$ and $R$ is
-\[\ \mathscr{L}(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
-where $\rho_t(\nu_t)=r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)$.
+where $\mu_k$ is the average return on day t. 
 Let $\pi=(\pi_1,\pi_2,...,\pi_K)$ denote the proportion of each normal model and $\sum_{i=1}^{K}\pi_i=1$
 In addition, we also restrict the weighted average of means from mixture normal models to zero.
 i.e. $\sum_{i=1}^{K}\pi_i*\mu_i=0$. So we can compute the mean of the last normal models $K$ in 
@@ -80,6 +78,8 @@ First, we only consider weekly data and choose the option prices on every Wednes
 impact from weekend trading. Second, we include  
 [Daily Treasury Yield Curve Rates](https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017) 
 as the risk free rates from US Department of the Treasury corresponding to the days of option prices.
+Since the yield cruve rates are measured in an annual basis. We need to convert them to a daily basis 
+by dividing 365 which is the number of days in a year.
 We end up the return R with `r length(R)` observations.
 
 
@@ -177,8 +177,22 @@ x2 = length(subset(model.num, model.num == 2))
 
 # Bayesian inference
 
+The likelihood function given $G^T$ and $R$ is
+\[\ \mathscr{L}(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
+where $\rho_t(\nu_t)=r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)$ and $\phi()$ is the component of each individual normal.
+We will estimate the parameters ($G^T,\nu_t,\pi,\mu,\theta$) by using the Gibbs Sampler. 
+The join posterior distribution based on the MN-NGARCH model is given by 
+\[\varphi(G^T,\nu_t,\mu,\theta,\pi|R) \propto \varphi(\nu_t) \varphi(\mu) \varphi(\theta) \varphi(\pi) \mathscr{L}(\xi|G^T,R)\]
+where $\varphi(\nu_t), \varphi(\mu), \varphi(\theta), \varphi(\pi)$ are the corresponding prior densities. 
+Suppose the parameters are independent to each other. We will use full conditionals of each parameter to compute the 
+Gibbs Sampler.
 
-
+(1) $\varphi(G^T|\nu_t,\mu,\theta,\pi,R)$
+For K = 2, the posterior distribution of $G^T=i, i=1,2$ is just a Bernoulli process. Therefore,
+\[P(G^T=i|\nu_t,\mu,\theta,\pi,R)=\frac{\pi_{i}\phi(R_t|\mu_{i}+\rho_t(\nu_t),\theta_{i})}
+{\pi_{1}\phi(R_t|\mu_{1}+\rho_t(\nu_t),\theta_{1}+\pi_{2}\phi(R_t|\mu_{2}+\rho_t(\nu_t),\theta_{2})}\]
+Using the information above and compute the probability for all data, 
+`r x1` data belong to the first normal model and `r x2` data belong to the second normal model.
 
 
 ```{r MCMC mixture}
