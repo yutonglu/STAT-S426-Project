@@ -39,7 +39,7 @@ cumulant generating function of $\epsilon_t$, so we can compute their conditiona
 of $K$ normal distributions 
 \[P(\epsilon_t|\mathscr{F}_{t-1})=\sum_{k=1}^K {\pi_k\Phi(\frac{\epsilon_t-\mu_k}{\sigma_{k,t}})}\] where
 \[\sigma_{k,t}^2=\omega_k+\alpha_k(\epsilon_{t-1}+\gamma_k \sigma_{k,t-1})^2+\beta_k\sigma^2_{k,t-1}\]
-Thus, the value of $\sigma_{k,t}^2$ depends on parameters $\theta_k=(\omega_k,\gamma_k,\alpha_k,\beta_k)$.
+Thus, the value of $\sigma_{k,t}^2$ depends on parameters $\theta_k=(\omega_k,\gamma_k,\alpha_k,\beta_k)$ with $\omega_k>0,\alpha_k≥0,\beta_k≥0$.
 For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
 
 \[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
@@ -206,15 +206,18 @@ Using the information above and compute the probability for all data,
 
 ```{r MCMC mixture}
 
-a <- b <- 1
 mu_0 <- mean(mu)
 tao_0.sq <- 0.01^2
 sigma_0.sq <- 0.01^2
 v_0 <- 1
+repl = 100
 
-trace <- array(NA, dim = c(10000,5), dimnames=list(iteration=NULL, parameters = c('mu1', 'mu2','sigma1.sq','sigma2.sq','p')))
-trace[1,] <- tr <- c(mean(R[model.num == 1]), mean(R[model.num == 2]), 
-                     var(R[model.num == 1]), var(R[model.num == 2]), x1/(x1+x2))
+trace = list(mu.1 = array(NA, dim = c(repl, 1)), 
+              mu.2 = array(NA, dim =c(repl, 1)),
+              theta.1 = array(NA, dim = c(repl, 4)),
+              theta.2 = array(NA, dim = c(repl, 4)),
+              p = array(NA, dim = c(repl, 1))
+              )
 
 
 x1 = length(subset(model.num, model.num == 1))
@@ -226,27 +229,134 @@ R2 = R[model.num == 2]
 R1.bar = mean(R[model.num == 1])
 R2.bar = mean(R[model.num == 2])
 
+generate.var = function(para, variance, data){
+  var.list = c()
+  for (i in 1:length(data)){
+    eplison = rnorm(1, mean = 0, sqrt(variance))
+    variance = para[1] + para[3]*(eplison+para[2]*variance)^2+para[4]*variance
+    var.list = c(var.list, variance)
+  }
+  
+  return(var.list)
+}
 
-for (i in 2:10000){
-  new.p <- rbeta(1,  x1 + a, x2 + b)
+log.likeli.ratio.1 = function(para1, para2, data){
+ var.list.1 = generate.var(para1,var(data),data)
+ var.list.2 = generate.var(para2,var(data),data)
+ likeli.1 = log(dnorm(data, mu[1] + rho_t, var.list.1))
+ likeli.2 = log(dnorm(data, mu[1] + rho_t, var.list.2))
+ return(sum(likeli.1-likeli.2))
+}
+
+log.likeli.ratio.2 = function(para1, para2, data){
+ var.list.1 = generate.var(para1,var(data),data)
+ var.list.2 = generate.var(para2,var(data),data)
+ likeli.1 = log(dnorm(data, mu[2] + rho_t, var.list.1))
+ likeli.2 = log(dnorm(data, mu[2] + rho_t, var.list.2))
+ return(sum(likeli.1-likeli.2))
+}
+
+MH.1 = function(para, data){
+  theta.trace = list(omega.1 = array(NA, dim = c(repl, 1)), 
+              gamma.1 = array(NA, dim =c(repl, 1)),
+              alpha.1 = array(NA, dim = c(repl, 1)),
+              beta.1 = array(NA, dim = c(repl, 1)))
   
-  new.sigma1.sq <- 1/rgamma(1,0.5*(v_0 + x1),0.5*(v_0*sigma_0.sq + sum((R[model.num == 1]-tr[1])^2)))
-  new.sigma2.sq <- 1/rgamma(1,0.5*(v_0 + x2),0.5*(v_0*sigma_0.sq + sum((R[model.num == 2]-tr[2])^2)))
+  for (i in 1:repl){
+  star <- c(exp(rnorm(1, mean = log(para[1]), sd = 0.01)),
+            rnorm(1, para[2], sd = 0.01),
+            exp(rnorm(1, mean = log(para[3]), sd = 0.01)),
+            exp(rnorm(1, mean = log(para[4]), sd = 0.01)))
+  H <- star/para
+  M <- log.likeli.ratio.1(star,para,data)
+  r = H + exp(c(M, M, M, M))
+  for (k in 1:4){
+  if (runif(1) < r[k]){
+    para[k] <- star[k]
+  }
+  }
+  theta.trace$omega.1[i] = para[1]
+  theta.trace$gamma.1[i] = para[2]
+  theta.trace$alpha.1[i] = para[3]
+  theta.trace$beta.1[i] = para[4]
+  }
+  return(theta.trace)
+}
+
+MH.2 = function(para, data){
+  theta.trace = list(omega.2 = array(NA, dim = c(repl, 1)), 
+              gamma.2 = array(NA, dim =c(repl, 1)),
+              alpha.2 = array(NA, dim = c(repl, 1)),
+              beta.2 = array(NA, dim = c(repl, 1)))
   
-  new.mu1 <- rnorm(1,(mu_0/tao_0.sq + x1*R1.bar/new.sigma1.sq)/(1/tao_0.sq + x1/new.sigma1.sq),
-                      sqrt(1/(1/tao_0.sq + x1/new.sigma1.sq)))
+  for (i in 1:repl){
+  star <- c(exp(rnorm(1, mean = log(para[1]), sd = 0.01)),
+            rnorm(1, para[2], sd = 0.01),
+            exp(rnorm(1, mean = log(para[3]), sd = 0.01)),
+            exp(rnorm(1, mean = log(para[4]), sd = 0.01)))
+  H <- star/para
+  M <- log.likeli.ratio.2(star, para, data)
+  r = H + exp(c(M, M, M, M))
+  for (k in 1:4){
+  if (runif(1) < r[k]){
+    para[k] <- star[k]
+  }
+  }
+  theta.trace$omega.2[i] = para[1]
+  theta.trace$gamma.2[i] = para[2]
+  theta.trace$alpha.2[i] = para[3]
+  theta.trace$beta.2[i] = para[4]
+  }
+  return(theta.trace)
+}
+
+
+
+  omega.1 <- runif(1,min=0.002,max=0.009); gamma.1 <- runif(1,min= -0.1,max=0.63)
+  alpha.1 <- runif(1,min=0.038,max=0.0625); beta.1 <- runif(1,min=0.089,max=0.093)
+  
+  omega.2 <- runif(1,min=0.005,max=0.009); gamma.2 <- runif(1,min= -0.4,max=0.1)
+  alpha.2 <- runif(1,min=0.02,max=0.125); beta.2 <- runif(1,min=0.05,max=0.1)
+  
+for (i in 1:repl){
+  new.p <- rbeta(1,  x1 + 1, x2 + 1)
+  
+  var.1 <- generate.var(para = c(omega.1,gamma.1,alpha.1,beta.1),variance = var(R1),data=R1)
+  var.2 <- generate.var(para = c(omega.2,gamma.2,alpha.2,beta.2),variance = var(R2),data=R2)
+  
+  theta.trace.1 = MH.1(para = c(omega.1,gamma.1,alpha.1,beta.1), data = R1)
+  theta.trace.2 = MH.2(para = c(omega.2,gamma.2,alpha.2,beta.2), data = R2)
+ 
+  A = sum(1/var.1) + new.p * new.p / (1-new.p)^2 * sum(1/var.2)
+  b = new.p/(1-new.p)*sum(rnorm(1, mean = 0, sqrt(var.2))/var.2) - sum(rnorm(1, mean = 0, sqrt(var.1))/var.1)
+  
+  new.mu1 = abs(rnorm(1,-A^(-1)*b,A^(-1)))
+  new.mu2 = -new.mu1*new.p/(1-new.p)
+  
+  trace$mu.1[i] = new.mu1
+  trace$mu.2[i] = new.mu2
+  
+  omega.1 <- mean(theta.trace.1$omega.1); gamma.1 <- mean(theta.trace.1$gamma.1)
+  alpha.1 <- mean(theta.trace.1$alpha.1); beta.1 <- mean(theta.trace.1$beta.1)
+  trace$theta.1[i,] <- c(omega.1, gamma.1, alpha.1, beta.1)
+  
+  omega.2 <- mean(theta.trace.2$omega.2); gamma.2 <- mean(theta.trace.2$gamma.2)
+  alpha.2 <- mean(theta.trace.2$alpha.2); beta.2 <- mean(theta.trace.2$beta.2)
+  trace$theta.2[i,] <- c(omega.2, gamma.2, alpha.2, beta.2)
+  
+  trace$p[i] = new.p
+  
+  }
+
+  # trace[i,] <- tr <- c(new.mu1, new.mu2, new.sigma1.sq, new.sigma2.sq, new.p)
+  # new.sigma1.sq <- 1/rgamma(1,0.5*(v_0 + x1),0.5*(v_0*sigma_0.sq + sum((R[model.num == 1]-tr[1])^2)))
+  # new.sigma2.sq <- 1/rgamma(1,0.5*(v_0 + x2),0.5*(v_0*sigma_0.sq + sum((R[model.num == 2]-tr[2])^2)))
+  
+  # new.mu1 <- rnorm(1,(mu_0/tao_0.sq + x1*R1.bar/new.sigma1.sq)/(1/tao_0.sq + x1/new.sigma1.sq),
+                      # sqrt(1/(1/tao_0.sq + x1/new.sigma1.sq)))
 
   # new.mu2 <- rnorm(1,(mu_0/tao_0.sq + x2*R2.bar/new.sigma2.sq)/(1/tao_0.sq + x2/new.sigma2.sq),
                       # sqrt(1/(1/tao_0.sq + x2/new.sigma2.sq)))
- # A = 
- # b =
-  
-  # new.mu1 = rnorm(1,-A^(-1)*b,A^(-1))
-  new.mu2 = -new.mu1*new.p/(1-new.p)
-  
-  trace[i,] <- tr <- c(new.mu1, new.mu2, new.sigma1.sq, new.sigma2.sq, new.p)
-  
-  }
 
 ```
 
