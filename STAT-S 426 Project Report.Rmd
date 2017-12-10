@@ -161,7 +161,7 @@ Psi.k = function(u){
 Psi.vt = Psi.k(u = 0)
 Psi.vt_1 = Psi.k(u = -1)
 
-r_t = mean(r) #0.01
+r_t = mean(r)
 
 rho_t = r_t + Psi.vt - Psi.vt_1
 
@@ -176,11 +176,14 @@ for (i in 1:length(R)){
   else {model.num = c(model.num,2)}
 }
 
+
+  x1 = length(subset(model.num, model.num == 1))
+  x2 = length(subset(model.num, model.num == 2))
+
+  R1 = R[model.num == 1]
+  R2 = R[model.num == 2]
+
 # cbind(Post.Gt.1, Post.Gt.2, model.num)
-
-x1 = length(subset(model.num, model.num == 1))
-x2 = length(subset(model.num, model.num == 2))
-
 # c(x1, x2)
 ```
 
@@ -207,7 +210,7 @@ Using the information above and compute the probability for all data,
 ```{r MCMC mixture}
 
 repl = 100  # number of iterations for Metropolis Hasting
-n.iter = 150 # number of iterations for Gibbs
+n.iter = 200 # number of iterations for Gibbs
 
 trace = list(mu.1 = array(NA, dim = c(n.iter, 1)), 
               mu.2 = array(NA, dim =c(n.iter, 1)),
@@ -216,12 +219,6 @@ trace = list(mu.1 = array(NA, dim = c(n.iter, 1)),
               p = array(NA, dim = c(n.iter, 1))
               )
 
-
-x1 = length(subset(model.num, model.num == 1))
-x2 = length(subset(model.num, model.num == 2))
-
-R1 = R[model.num == 1]
-R2 = R[model.num == 2]
 
 generate.var = function(para, variance, data){
   var.list = c()
@@ -237,16 +234,16 @@ generate.var = function(para, variance, data){
 log.likeli.ratio.1 = function(para1, para2, data){
  var.list.1 = generate.var(para1,var(data),data)
  var.list.2 = generate.var(para2,var(data),data)
- likeli.1 = log(dnorm(data, mu[1] + rho_t, var.list.1))
- likeli.2 = log(dnorm(data, mu[1] + rho_t, var.list.2))
+ likeli.1 = log(dnorm(data, new.mu1 + rho_t, var.list.1))
+ likeli.2 = log(dnorm(data, new.mu1 + rho_t, var.list.2))
  return(sum(likeli.1-likeli.2))
 }
 
 log.likeli.ratio.2 = function(para1, para2, data){
  var.list.1 = generate.var(para1,var(data),data)
  var.list.2 = generate.var(para2,var(data),data)
- likeli.1 = log(dnorm(data, mu[2] + rho_t, var.list.1))
- likeli.2 = log(dnorm(data, mu[2] + rho_t, var.list.2))
+ likeli.1 = log(dnorm(data, new.mu2 + rho_t, var.list.1))
+ likeli.2 = log(dnorm(data, new.mu2 + rho_t, var.list.2))
  return(sum(likeli.1-likeli.2))
 }
 
@@ -304,7 +301,8 @@ MH.2 = function(para, data){
   return(theta.trace)
 }
 
-
+  new.mu1 = mu[1]; new.mu2 = mu[2]
+  
   omega.1 <- runif(1,min=0.002,max=0.009); gamma.1 <- runif(1,min= -0.1,max=0.63)
   alpha.1 <- runif(1,min=0.038,max=0.0625); beta.1 <- runif(1,min=0.089,max=0.093)
   
@@ -321,9 +319,9 @@ for (i in 1:n.iter){
   theta.trace.2 = MH.2(para = c(omega.2,gamma.2,alpha.2,beta.2), data = R2)
  
   A = sum(1/var.1) + new.p * new.p / (1-new.p)^2 * sum(1/var.2)
-  b = new.p/(1-new.p)*sum(rnorm(1, mean = 0, sqrt(var.2))/var.2) - sum(rnorm(1, mean = 0, sqrt(var.1))/var.1)
+  b = new.p/(1-new.p)*sum(rnorm(length(var.2), mean = 0, sqrt(var.2))/var.2) - sum(rnorm(length(var.1), mean = 0, sqrt(var.1))/var.1)
   
-  new.mu1 = abs(rnorm(1,-A^(-1)*b,A^(-1)))
+  new.mu1 = abs(rnorm(1,-A^(-1)*b,1/A))
   new.mu2 = -new.mu1*new.p/(1-new.p)
   
   trace$mu.1[i] = new.mu1
@@ -341,15 +339,6 @@ for (i in 1:n.iter){
   
   }
 
-  # trace[i,] <- tr <- c(new.mu1, new.mu2, new.sigma1.sq, new.sigma2.sq, new.p)
-  # new.sigma1.sq <- 1/rgamma(1,0.5*(v_0 + x1),0.5*(v_0*sigma_0.sq + sum((R[model.num == 1]-tr[1])^2)))
-  # new.sigma2.sq <- 1/rgamma(1,0.5*(v_0 + x2),0.5*(v_0*sigma_0.sq + sum((R[model.num == 2]-tr[2])^2)))
-  
-  # new.mu1 <- rnorm(1,(mu_0/tao_0.sq + x1*R1.bar/new.sigma1.sq)/(1/tao_0.sq + x1/new.sigma1.sq),
-                      # sqrt(1/(1/tao_0.sq + x1/new.sigma1.sq)))
-
-  # new.mu2 <- rnorm(1,(mu_0/tao_0.sq + x2*R2.bar/new.sigma2.sq)/(1/tao_0.sq + x2/new.sigma2.sq),
-                      # sqrt(1/(1/tao_0.sq + x2/new.sigma2.sq)))
 
 trace.matrix = as.matrix(cbind(trace$mu.1,trace$mu.2,trace$theta.1,trace$theta.2,trace$p))
 
@@ -370,7 +359,7 @@ plot(trace.matrix[,1],trace.matrix[,2],ylab=expression(mu[2]),xlab=expression(mu
 ```{r diagnostics}
 
 plot(density(trace.matrix[,1]), type = 'l', ylab = 'Density', xlab = expression(mu),
-     las = 1,xlim = c(-0.15, 0.15), ylim = c(0, 22),
+     las = 1,xlim = c(-0.03, 0.03), ylim = c(0,120),
      main = expression('Posterior density of'~mu))
 lines(density(trace.matrix[,2]), type = 'l',col=2)
 legend('topleft',legend = c(expression(mu[1]),expression(mu[2])), 
@@ -394,7 +383,7 @@ post.inf = apply(trace.matrix,2,FUN = function(x){return(c(mean(x),quantile(x,c(
 row.names(post.inf)[1] = 'mean'
 colnames(post.inf) = c('mu1','mu2','omega1','gamma1','alpha1','beta1',
                        'omega2','gamma2','alpha2','beta2','pi')
-round(post.inf, 6)
+round(post.inf, 4)
 
 
 ```
