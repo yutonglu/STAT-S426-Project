@@ -206,17 +206,14 @@ Using the information above and compute the probability for all data,
 
 ```{r MCMC mixture}
 
-mu_0 <- mean(mu)
-tao_0.sq <- 0.01^2
-sigma_0.sq <- 0.01^2
-v_0 <- 1
-repl = 100
+repl = 100  # number of iterations for Metropolis Hasting
+n.iter = 150 # number of iterations for Gibbs
 
-trace = list(mu.1 = array(NA, dim = c(repl, 1)), 
-              mu.2 = array(NA, dim =c(repl, 1)),
-              theta.1 = array(NA, dim = c(repl, 4)),
-              theta.2 = array(NA, dim = c(repl, 4)),
-              p = array(NA, dim = c(repl, 1))
+trace = list(mu.1 = array(NA, dim = c(n.iter, 1)), 
+              mu.2 = array(NA, dim =c(n.iter, 1)),
+              theta.1 = array(NA, dim = c(n.iter, 4)),
+              theta.2 = array(NA, dim = c(n.iter, 4)),
+              p = array(NA, dim = c(n.iter, 1))
               )
 
 
@@ -225,9 +222,6 @@ x2 = length(subset(model.num, model.num == 2))
 
 R1 = R[model.num == 1]
 R2 = R[model.num == 2]
-
-R1.bar = mean(R[model.num == 1])
-R2.bar = mean(R[model.num == 2])
 
 generate.var = function(para, variance, data){
   var.list = c()
@@ -311,14 +305,13 @@ MH.2 = function(para, data){
 }
 
 
-
   omega.1 <- runif(1,min=0.002,max=0.009); gamma.1 <- runif(1,min= -0.1,max=0.63)
   alpha.1 <- runif(1,min=0.038,max=0.0625); beta.1 <- runif(1,min=0.089,max=0.093)
   
   omega.2 <- runif(1,min=0.005,max=0.009); gamma.2 <- runif(1,min= -0.4,max=0.1)
   alpha.2 <- runif(1,min=0.02,max=0.125); beta.2 <- runif(1,min=0.05,max=0.1)
   
-for (i in 1:repl){
+for (i in 1:n.iter){
   new.p <- rbeta(1,  x1 + 1, x2 + 1)
   
   var.1 <- generate.var(para = c(omega.1,gamma.1,alpha.1,beta.1),variance = var(R1),data=R1)
@@ -358,14 +351,16 @@ for (i in 1:repl){
   # new.mu2 <- rnorm(1,(mu_0/tao_0.sq + x2*R2.bar/new.sigma2.sq)/(1/tao_0.sq + x2/new.sigma2.sq),
                       # sqrt(1/(1/tao_0.sq + x2/new.sigma2.sq)))
 
+trace.matrix = as.matrix(cbind(trace$mu.1,trace$mu.2,trace$theta.1,trace$theta.2,trace$p))
+
 ```
 
 
 
 ```{r trace plot}
-plot(trace[,1],type = 'l',ylab=expression(mu[1]))
-plot(trace[,2],type = 'l',ylab=expression(mu[2]))
-plot(trace[,1],trace[,2],ylab=expression(mu[2]),xlab=expression(mu[1]))
+plot(trace.matrix[,1],type = 'l',ylab=expression(mu[1]))
+plot(trace.matrix[,2],type = 'l',ylab=expression(mu[2]))
+plot(trace.matrix[,1],trace.matrix[,2],ylab=expression(mu[2]),xlab=expression(mu[1]))
 
 ```
 
@@ -374,34 +369,31 @@ plot(trace[,1],trace[,2],ylab=expression(mu[2]),xlab=expression(mu[1]))
 
 ```{r diagnostics}
 
-plot(density(trace[,1]), type = 'l', ylab = 'Density', xlab = expression(mu),
-     las = 1,xlim = c(-0.02,0.02),
+plot(density(trace.matrix[,1]), type = 'l', ylab = 'Density', xlab = expression(mu),
+     las = 1,xlim = c(-0.15, 0.15), ylim = c(0, 22),
      main = expression('Posterior density of'~mu))
-lines(density(trace[,2]), type = 'l',col=2)
+lines(density(trace.matrix[,2]), type = 'l',col=2)
 legend('topleft',legend = c(expression(mu[1]),expression(mu[2])), 
        col = c(1,2), lty = c(1,1), cex = 1.5)
 
-plot(density(trace[,3]), type = 'l', ylab = 'Density', xlab = expression(sigma^2),
-     las = 1, xlim = c(5e-5,3.5e-4),
-     main = expression('Posterior density of'~sigma^2))
-lines(density(trace[,4]), type = 'l', col = 2)
-legend('topright',legend = c(expression(sigma[1]^2),expression(sigma[2]^2)), 
-       col = c(1,2), lty = c(1,1), cex = 1.5)
 
-
-plot(density(trace[,5]), type = 'l', ylab = 'Density', xlab = expression(pi),
+plot(density(trace.matrix[,11]), type = 'l', ylab = 'Density', xlab = expression(pi),
      xlim = c(0.2,0.8), las = 1,
      main = expression('Posterior density of'~pi))
-lines(density(1-trace[,5]), col=2)
+lines(density(1-trace.matrix[,11]), col=2)
 legend('topleft',legend = c(expression(pi[1]),expression(pi[2])), 
        col = c(1,2), lty = c(1,1),cex = 1.5)
 
 ```
 
+
+
 ```{r inference}
 
-post.inf = apply(trace,2,FUN = function(x){return(c(mean(x),quantile(x,c(0.025,0.975))))})
+post.inf = apply(trace.matrix,2,FUN = function(x){return(c(mean(x),quantile(x,c(0.025,0.975))))})
 row.names(post.inf)[1] = 'mean'
+colnames(post.inf) = c('mu1','mu2','omega1','gamma1','alpha1','beta1',
+                       'omega2','gamma2','alpha2','beta2','pi')
 round(post.inf, 6)
 
 
@@ -409,12 +401,11 @@ round(post.inf, 6)
 
 
 ```{r acf effective sample size and plot}
-par(mfrow=c(4,1))
-mu.mcmc <- mcmc(trace[,1:2], start = 100)
+
+
+mu.mcmc <- mcmc(trace.matrix[,1:2], start = 100)
 autocorr.plot(mu.mcmc)
-sigma.mcmc <- mcmc(trace[,3:4], start = 100)
-autocorr.plot(sigma.mcmc)
-t(as.matrix(c(effectiveSize(mu.mcmc), effectiveSize(sigma.mcmc))))
+effectiveSize(mu.mcmc)
 
 ```
 
