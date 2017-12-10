@@ -260,7 +260,7 @@ MH.1 = function(para, data){
             exp(rnorm(1, mean = log(para[4]), sd = 0.01)))
   H <- star/para
   M <- log.likeli.ratio.1(star,para,data)
-  r = H + exp(c(M, M, M, M))
+  r = H * exp(c(M, M, M, M))
   for (k in 1:4){
   if (runif(1) < r[k]){
     para[k] <- star[k]
@@ -287,7 +287,7 @@ MH.2 = function(para, data){
             exp(rnorm(1, mean = log(para[4]), sd = 0.01)))
   H <- star/para
   M <- log.likeli.ratio.2(star, para, data)
-  r = H + exp(c(M, M, M, M))
+  r = H * exp(c(M, M, M, M))
   for (k in 1:4){
   if (runif(1) < r[k]){
     para[k] <- star[k]
@@ -359,7 +359,7 @@ plot(trace.matrix[,1],trace.matrix[,2],ylab=expression(mu[2]),xlab=expression(mu
 ```{r diagnostics}
 
 plot(density(trace.matrix[,1]), type = 'l', ylab = 'Density', xlab = expression(mu),
-     las = 1,xlim = c(-0.03, 0.03), ylim = c(0,120),
+     las = 1,xlim = c(-0.04, 0.04), ylim = c(0,80),
      main = expression('Posterior density of'~mu))
 lines(density(trace.matrix[,2]), type = 'l',col=2)
 legend('topleft',legend = c(expression(mu[1]),expression(mu[2])), 
