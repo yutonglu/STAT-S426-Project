@@ -99,10 +99,13 @@ abline(v = length(R)/2, col = 'green', lty = 2)
 
 
 ```{r boxplot ,fig.cap="Boxplot of S&P 500 each year"}
-# plot(density(R),las = 1, xlab = 'R')
+plot(density(R),las = 1, xlab = 'R', ylim = c(0, 35))
+lines(density(R[1:(length(R)/2)]), col = 2)
+lines(density(R[(length(R)/2+1):length(R)]), col = 3)
+abline(v = 0, col = 4, lty = 2)
 
-boxplot(list(SP2006 = R[1:round(length(R)/2)],SP2007 = R[round(length(R)/2):length(R)]),
-        las = 1, range = 0, main = 'Return in 2006 and 2007')
+# boxplot(list(SP2006 = R[1:round(length(R)/2)],SP2007 = R[round(length(R)/2):length(R)]),
+        #las = 1, range = 0, main = 'Return in 2006 and 2007')
 
 # abline(v = 0.008, col = 3)
 # abline(v = -0.001, col = 5)
@@ -151,7 +154,7 @@ For a two-mixture normal model, we set up some information for $\mu=(0.008,-0.01
 and $\pi$ = (`r p`). The mixture density seems close to the real density especially when the return is positive. 
 Thus, we may begin our following computations based on this model.
 
-`r mu`
+
 ```{r conditional cumulant generating function}
 
 # Fix K = 2, v_t = 0 (p. 595)
@@ -189,7 +192,7 @@ for (i in 1:length(R)){
 # c(x1, x2)
 ```
 
-## Bayesian inference
+## 5 Bayesian inference
 
 The likelihood function given $G^T$ and $R$ is
 \[\ \mathscr{L}(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
@@ -242,8 +245,8 @@ and $\theta_2 = (\omega_2,\gamma_2,\alpha_2,\beta_2)$.
 
 ```{r MCMC mixture}
 
-repl = 100  # number of iterations for Metropolis Hasting
-n.iter = 200 # number of iterations for Gibbs
+repl = 1 # number of iterations for Metropolis Hasting
+n.iter = 10000 # number of iterations for Gibbs
 
 trace = list(mu.1 = array(NA, dim = c(n.iter, 1)), 
               mu.2 = array(NA, dim = c(n.iter, 1)),
