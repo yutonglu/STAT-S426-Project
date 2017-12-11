@@ -291,7 +291,7 @@ MH.1 = function(para, data){
             rnorm(1, para[2], sd = 0.01),
             exp(rnorm(1, mean = log(para[3]), sd = 0.01)),
             exp(rnorm(1, mean = log(para[4]), sd = 0.01)))
-  H <- star/para
+  H <- c(star[1]/para[1],1,star[3]/para[3],star[4]/para[4])
   M <- log.likeli.ratio.1(star,para,data)
   r = H * exp(c(M, M, M, M))
   for (k in 1:4){
@@ -318,7 +318,7 @@ MH.2 = function(para, data){
             rnorm(1, para[2], sd = 0.01),
             exp(rnorm(1, mean = log(para[3]), sd = 0.01)),
             exp(rnorm(1, mean = log(para[4]), sd = 0.01)))
-  H <- star/para
+  H <- c(star[1]/para[1],1,star[3]/para[3],star[4]/para[4])
   M <- log.likeli.ratio.2(star, para, data)
   r = H * exp(c(M, M, M, M))
   for (k in 1:4){
