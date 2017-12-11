@@ -1,0 +1,401 @@
+---
+title: |
+  | Project Report
+  | Baysien Option Pricing Using Mixed Normal Heteroskedasticity Models
+author: "Ashley Lu, Liang Zou"
+date: "11/28/2017"
+output: 
+  pdf_document:
+     includes:
+        in_header: ApproxRegMacros.tex
+---
+
+
+```{r setup, include=FALSE}
+library(knitr)
+opts_chunk$set(message=FALSE, warning=FALSE, fig.align='center',cache=TRUE, autodep=TRUE,fig.height = 5,echo=FALSE)
+library(coda)
+library(MASS)
+library(mvtnorm)
+set.seed(20171211)
+```
+
+# 1. Introduction
+
+The option pricing using asymmetric mixed normal heteroscedasticitic models helps us better fit actual observed
+prices. We consider performing inferences and price options in a Baysian framework through computing posterior
+moments of the model parameters by sampling from the poterior density. Unlike classical inference that need
+conditions on maximum likelihood estimation, the MCMC (Markov Chain Monte Carlo) method utilizes the risk neutral
+predicitve price densities by product of the Gibbs sampler. An application is using the real data on the S&P 500
+index and index options. We plan to perform Baysien inferences on a two-component asymmetric mixture normal 
+by using the data between 2006 and 2007. 
+
+
+# 2. Model's Framework
+
+   Let $\mathscr{F}_t$ denote the information set up to time t. Then the underlying return process $R_t=ln(\frac{S_t}{S_{t-1}})$, where $S_t$ is the index level on each day t. Then
+\[R_t = r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)+\epsilon_t\] 
+Since we also know each year's risk free rate $r_t$, and $\nu_t$ is the unit risk premium, $\Psi_t$ is conditional 
+cumulant generating function of $\epsilon_t$, so we can compute their conditional distribution given by combination 
+of $K$ normal distributions 
+\[P(\epsilon_t|\mathscr{F}_{t-1})=\sum_{k=1}^K {\pi_k\Phi(\frac{\epsilon_t-\mu_k}{\sigma_{k,t}})}\] where
+\[\sigma_{k,t}^2=\omega_k+\alpha_k(\epsilon_{t-1}+\gamma_k \sigma_{k,t-1})^2+\beta_k\sigma^2_{k,t-1}\]
+Thus, the value of $\sigma_{k,t}^2$ depends on parameters $\theta_k = (\omega_k, \gamma_k, \alpha_k, \beta_k)$ with $\omega_k > 0,\alpha_k \geq 0,\beta_k \geq 0$.
+For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
+
+\[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
+where $\mu_k$ is the average return on day t. 
+Let $\pi=(\pi_1,\pi_2,...,\pi_K)$ denote the proportion of each normal model and $\sum_{i=1}^{K}\pi_i=1$
+In addition, we also restrict the weighted average of means from mixture normal models to zero.
+
+i.e. $\sum_{i=1}^{K}\pi_i*\mu_i=0$. So we can compute the mean of the last normal models $K$ in 
+$\mu_K=-\frac{\sum_{i=1}^{K-1}\pi_i*\mu_i}{\pi_K}$. 
+For further analysis, we plan to use the simplest case where $K=2$ and $\nu_t=0$.
+
+
+```{r load data,echo=FALSE}
+SP500.2006 <- read.csv("2006.txt",header = F)
+SP500.2007 <- read.csv("2007.txt",header = F)
+SP500 <- rbind(SP500.2006,SP500.2007)
+
+r = c(4.35,4.44,4.42,4.51,4.6,4.66,4.7,4.69,4.74,4.76,4.77,4.78,4.83,4.82,4.91,4.98,4.98,5.02,4.99,
+      4.97,5.07,5.05,5.15,5.22,5.30,5.29,5.26,5.22,5.16,5.11,5.07,5.06,5.07,5.03,5.02,4.99,5.00,4.89,4.87,
+      5.02,5.04,5.08,4.95,5.02,5.04,5.01,4.98,4.90,4.95,4.96,4.99,
+      4.98,5.01,5.08,5.09,5.09,5.09,5.06,5.05,4.9,4.91,4.89,4.90,4.92,4.90,4.90,4.82,4.96,4.96,4.96,4.99,
+      4.98,4.97,4.93,4.99,4.98,4.95,4.82,4.89,4.41,4.10,4.24,4.28,4.12,4.06,4.03,4.10,4.03,4.11,4.23,4.11,3.91,3.98,
+      4.04,3.71, 3.65,3.18,3.31,3.13,3.16,3.26,3.34
+      )/365
+# transfer annual rate to daily rate
+
+R = c()
+for (i in 2:nrow(SP500)){
+  R = c(R, log(SP500$V2[i]/SP500$V2[i-1]))
+}
+```
+
+
+# 3. Data for S&P 500 Index
+In this project, we use data on call options on the [S&P 500 index](https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972&enddate=Dec+28%2C+2011&num=30&ei=dxwBWqmEFozKjAG-_IyQDQ). Our data covers 2 years period from Jan 4 2006 to Dec,31,2007 and compute the return. We also impose the following restriction on our sample: First, we only consider weekly data and choose the option prices on every Wednesday since it minimizes the impact from weekend trading. Second, we include [Daily Treasury Yield Curve Rates](https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017) 
+as the risk free rates from US Department of the Treasury corresponding to the days of option prices.Since the yield cruve rates are measured in an annual basis. We need to convert them to a daily basis by dividing 365 which is the number of days in a year.
+We end up the return R with `r length(SP500)` observations.
+
+
+```{r plot of R,fig.cap="The return process of R",echo=FALSE,fig.pos="H"}
+plot(R, type = 'l', las = 1,main="Traceplot for R")
+abline(h=0,col="green2",lty=2)
+```
+
+
+Due to the Subprime mortgage crisis that happened in US in the year of 2007, the fluctations of return are much larger than the return in 2006, which strengthens the difficulty on the precision of model prediction and inference.We can 
+see the mean of R generally hold on a constant level but the variance increased a lot on 2007 than 2006. 
+
+
+ 
+```{r boxplot ,fig.cap="Density plot for R in total and each year",echo=FALSE,fig.pos="H"}
+plot(density(R),las = 1, xlab = 'R', ylim = c(0, 35),col="blue1",main="Density plot for R")
+lines(density(R[1:(length(R)/2)]), col = "lightcoral")
+lines(density(R[(length(R)/2+1):length(R)]), col = "green4")
+legend("topleft",legend=c("Rtotal","R2006","R2007"),col = c("blue1","lightcoral","green4"), lty=1,cex=1,bty="n")
+```
+ 
+The density plot for the total number of R and R for 2006 and 2007 are pretty much looks similiar,the number of R in 2006 and total plots of each year are left skewed and the large part of data greater than mean.The value of R in 2007 looks quite normal and they both looks similar than multinormal distribution.
+
+
+
+# 4 Initial Estimate
+```{r,echo=FALSE}
+# K = # of mixture normal models 
+# T = total # of days
+# pi = proportion of each normal model
+# mu = mean of each normal
+# theta = variance of each normal
+# v_t ~ Uniform[0,1]
+# Gt = k -> which normal model
+
+mu = c(0.008, -0.012)
+s2 = c(0.0001, 0.0002)
+p = c(0.6, 0.4)
+K = 2 # the number of mixed normal models
+```
+
+For a two-mixture normal model, we randomly set up some information for $\mu=(0.008,-0.012)$ , $\sigma^{2}=(1e-04,2e-04)$  
+and $\pi$ = (`r p`). The mixture density seems close to the real density especially when the return is positive. 
+Thus, we may begin our following computations based on this model.
+
+
+```{r conditional cumulant generating function,echo=FALSE}
+# Fix K = 2, v_t = 0 (p. 595)
+
+Psi.k = function(u){
+  return(log(p[1]*exp(-u*mu[1] + u^2*s2[1]/2) + p[2]*exp(-u*mu[2] + u^2*s2[2]/2)))
+}
+
+Psi.vt = Psi.k(u = 0)
+Psi.vt_1 = Psi.k(u = -1)
+
+r_t = mean(r)
+
+rho_t = r_t + Psi.vt - Psi.vt_1
+
+Post.Gt.1 = p[1] * dnorm(R, mu[1] + rho_t,sqrt(s2[1]))/(p[1] * dnorm(R, mu[1] + rho_t,sqrt(s2[1])) + p[2] * dnorm(R, mu[2] + rho_t,sqrt(s2[2])))
+Post.Gt.2 = p[2] * dnorm(R, mu[2] + rho_t,sqrt(s2[2]))/(p[1] * dnorm(R, mu[1] + rho_t,sqrt(s2[1])) + p[2] * dnorm(R, mu[2] + rho_t,sqrt(s2[2])))
+
+model.num = c()
+for (i in 1:length(R)){
+  if (Post.Gt.1[i] > Post.Gt.2[i]){
+    model.num = c(model.num,1)
+  }
+  else {model.num = c(model.num,2)}
+}
+
+
+  x1 = length(subset(model.num, model.num == 1))
+  x2 = length(subset(model.num, model.num == 2))
+
+  R1 = R[model.num == 1]
+  R2 = R[model.num == 2]
+
+# cbind(Post.Gt.1, Post.Gt.2, model.num)
+# c(x1, x2)
+```
+
+# 5 Bayesian inference
+
+The likelihood function given $G^T$ and $R$ is
+\[\ \mathscr{L}(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
+where $\rho_t(\nu_t)=r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)$ and $\phi()$ is the component of each individual normal.
+We will estimate the parameters ($G^T,\nu_t,\pi,\mu,\theta$) by using the Gibbs Sampler. The join posterior distribution based on the MN-NGARCH model is given by 
+\[\varphi(G^T,\nu_t,\mu,\theta,\pi|R) \propto \varphi(\nu_t) \varphi(\mu) \varphi(\theta) \varphi(\pi) \mathscr{L}(\xi|G^T,R)\]
+where $\varphi(\nu_t), \varphi(\mu), \varphi(\theta), \varphi(\pi)$ are the corresponding prior densities. Suppose the parameters are independent to each other. We will use full conditionals of each parameter to compute the Gibbs Sampler.
+
+(1) $\varphi(G^T|\nu_t,\mu,\theta,\pi,R)$
+For K = 2, the posterior distribution of $G^T=i, i=1,2$ is just a Bernoulli process. Therefore,
+\[P(G^T=i|\nu_t,\mu,\theta,\pi,R)=\frac{\pi_{i}\phi(R_t|\mu_{i}+\rho_t(\nu_t),\theta_{i})}
+{\pi_{1}\phi(R_t|\mu_{1}+\rho_t(\nu_t),\theta_{1}+\pi_{2}\phi(R_t|\mu_{2}+\rho_t(\nu_t),\theta_{2})}\]
+Using the information above and compute the probability for all data, `r x1` data belong to the first normal model and `r x2` data belong to the second normal model.
+
+(2) $\varphi(\pi|G^T,\nu_t,\mu,\theta,R)$
+In the simplest case with two mixture normal, the prior and posterior distributions of $\pi$ just Beta Distribution with parameters (a, b) and (a+$x_1$, b+$x_2$) respectively where $x_1$ is the number of data that belong to the first normal model and $x_2$ is the number of data that belong to the second normal model.Here, we set up a weak prior for $\pi_1$ (a = b = 1), so beta(1,1) becomes uniform[0,1].We can compute $\pi_2$ by subtracting $\pi_1$ from 1.
+
+(3) $\varphi(\mu|\pi,G^T,\nu_t,\theta,R)$
+To find the posterior of $\mu = (\mu_1,\mu_2)$. We only need to find the posterior distribution of $\mu_1$ and compute $\mu_2 = -\frac{\pi_1*\mu_1}{\pi_2}$ according to our assumptions.Since it's univariate, the posterior of $\mu_1$ is Normal 
+with mean $-A^{-1}b$ and variance $A^{-1}$ where 
+\[A = \sum_{(1)}\frac{1}{\sigma^2_{1,t}}+\frac{\pi_{1}^2}{\pi_{2}^2}\sum_{(2)}\frac{1}{\sigma^2_{2,t}}\]
+\[b = \frac{\pi_1}{\pi_2}\sum_{(2)}\frac{\epsilon_t}{\sigma^2_{2,t}}-\sum_{(1)}\frac{\epsilon_t}{\sigma^2_{1,t}}\]
+
+(4) $\varphi(\theta|\pi,G^T,\nu_t,\mu,R)$
+$\theta_k$ has four components which are $(\omega_k,\gamma_k,\alpha_k,\beta_k)$.We set up prior support for these parameters and use Metropolis Hasting to estimate them.Since $(\omega_k,\alpha_k,\beta_k)$ are all positive, we choose lognormal as their proposal distributions and choose normal as proposal distribution for $\gamma_k$.
+
+(5) $\varphi(\nu_t|\pi,G^T,\theta,\mu,R)$
+Since we treat $\nu_t = 0$ at the beginning, we just draw one sample from uniform[0,1] and find the corresponding quantile of conditional posterior distribution.
+
+In the following diagnostics or inferences, we will focus more on $\mu = (\mu_1,\mu_2)$,$\pi = (\pi_1, \pi_2)$, $\theta_1 = (\omega_1,\gamma_1,\alpha_1,\beta_1)$and $\theta_2 = (\omega_2,\gamma_2,\alpha_2,\beta_2)$.
+
+
+```{r MCMC mixture,echo=FALSE}
+
+repl = 1 # number of iterations for Metropolis Hasting
+n.iter = 10000 # number of iterations for Gibbs
+
+trace = list(mu.1 = array(NA, dim = c(n.iter, 1)), 
+              mu.2 = array(NA, dim = c(n.iter, 1)),
+              theta.1 = array(NA, dim = c(n.iter, 4)),
+              theta.2 = array(NA, dim = c(n.iter, 4)),
+              p = array(NA, dim = c(n.iter, 1))
+            )
+
+
+generate.var = function(para, variance, data){
+  var.list = c()
+  for (i in 1:length(data)){
+    eplison = rnorm(1, mean = 0, sqrt(variance))
+    variance = para[1] + para[3]*(eplison+para[2]*variance)^2+para[4]*variance
+    var.list = c(var.list, variance)
+  }
+  
+  return(var.list)
+}
+
+log.likeli.ratio.1 = function(para1, para2, data){
+ var.list.1 = generate.var(para1,var(data),data)
+ var.list.2 = generate.var(para2,var(data),data)
+ likeli.1 = log(dnorm(data, new.mu1 + rho_t, var.list.1))
+ likeli.2 = log(dnorm(data, new.mu1 + rho_t, var.list.2))
+ return(sum(likeli.1-likeli.2))
+}
+
+log.likeli.ratio.2 = function(para1, para2, data){
+ var.list.1 = generate.var(para1,var(data),data)
+ var.list.2 = generate.var(para2,var(data),data)
+ likeli.1 = log(dnorm(data, new.mu2 + rho_t, var.list.1))
+ likeli.2 = log(dnorm(data, new.mu2 + rho_t, var.list.2))
+ return(sum(likeli.1-likeli.2))
+}
+
+MH.1 = function(para, data){
+  theta.trace = list(omega.1 = array(NA, dim = c(repl, 1)), 
+              gamma.1 = array(NA, dim =c(repl, 1)),
+              alpha.1 = array(NA, dim = c(repl, 1)),
+              beta.1 = array(NA, dim = c(repl, 1)))
+  
+  for (i in 1:repl){
+  star <- c(exp(rnorm(1, mean = log(para[1]), sd = 0.01)),
+            rnorm(1, para[2], sd = 0.01),
+            exp(rnorm(1, mean = log(para[3]), sd = 0.01)),
+            exp(rnorm(1, mean = log(para[4]), sd = 0.01)))
+  H <- c(star[1]/para[1],1,star[3]/para[3],star[4]/para[4])
+  M <- log.likeli.ratio.1(star,para,data)
+  r = H * exp(c(M, M, M, M))
+  for (k in 1:4){
+  if (runif(1) < r[k]){
+    para[k] <- star[k]
+  }
+  }
+  theta.trace$omega.1[i] = para[1]
+  theta.trace$gamma.1[i] = para[2]
+  theta.trace$alpha.1[i] = para[3]
+  theta.trace$beta.1[i] = para[4]
+  }
+  return(theta.trace)
+}
+
+MH.2 = function(para, data){
+  theta.trace = list(omega.2 = array(NA, dim = c(repl, 1)), 
+              gamma.2 = array(NA, dim =c(repl, 1)),
+              alpha.2 = array(NA, dim = c(repl, 1)),
+              beta.2 = array(NA, dim = c(repl, 1)))
+  
+  for (i in 1:repl){
+  star <- c(exp(rnorm(1, mean = log(para[1]), sd = 0.01)),
+            rnorm(1, para[2], sd = 0.01),
+            exp(rnorm(1, mean = log(para[3]), sd = 0.01)),
+            exp(rnorm(1, mean = log(para[4]), sd = 0.01)))
+  H <- c(star[1]/para[1],1,star[3]/para[3],star[4]/para[4])
+  M <- log.likeli.ratio.2(star, para, data)
+  r = H * exp(c(M, M, M, M))
+  for (k in 1:4){
+  if (runif(1) < r[k]){
+    para[k] <- star[k]
+  }
+  }
+  theta.trace$omega.2[i] = para[1]
+  theta.trace$gamma.2[i] = para[2]
+  theta.trace$alpha.2[i] = para[3]
+  theta.trace$beta.2[i] = para[4]
+  }
+  return(theta.trace)
+}
+
+  new.mu1 = mu[1]; new.mu2 = mu[2]
+  
+  omega.1 <- runif(1,min=0.002,max=0.009); gamma.1 <- runif(1,min= -0.1,max=0.63)
+  alpha.1 <- runif(1,min=0.038,max=0.0625); beta.1 <- runif(1,min=0.089,max=0.093)
+  
+  omega.2 <- runif(1,min=0.005,max=0.009); gamma.2 <- runif(1,min= -0.4,max=0.1)
+  alpha.2 <- runif(1,min=0.02,max=0.125); beta.2 <- runif(1,min=0.05,max=0.1)
+  
+for (i in 1:n.iter){
+  new.p <- rbeta(1,  x1 + 1, x2 + 1)
+  
+  var.1 <- generate.var(para = c(omega.1,gamma.1,alpha.1,beta.1),variance = var(R1),data=R1)
+  var.2 <- generate.var(para = c(omega.2,gamma.2,alpha.2,beta.2),variance = var(R2),data=R2)
+  
+  theta.trace.1 = MH.1(para = c(omega.1,gamma.1,alpha.1,beta.1), data = R1)
+  theta.trace.2 = MH.2(para = c(omega.2,gamma.2,alpha.2,beta.2), data = R2)
+ 
+  A = sum(1/var.1) + new.p * new.p / (1-new.p)^2 * sum(1/var.2)
+  b = new.p/(1-new.p)*sum(rnorm(length(var.2), mean = 0, sqrt(var.2))/var.2) - sum(rnorm(length(var.1), mean = 0, sqrt(var.1))/var.1)
+  
+  new.mu1 = abs(rnorm(1,-A^(-1)*b,sqrt(1/A)))
+  new.mu2 = -new.mu1*new.p/(1-new.p)
+  
+  trace$mu.1[i] = new.mu1
+  trace$mu.2[i] = new.mu2
+  
+  omega.1 <- mean(theta.trace.1$omega.1); gamma.1 <- mean(theta.trace.1$gamma.1)
+  alpha.1 <- mean(theta.trace.1$alpha.1); beta.1 <- mean(theta.trace.1$beta.1)
+  trace$theta.1[i,] <- c(omega.1, gamma.1, alpha.1, beta.1)
+  
+  omega.2 <- mean(theta.trace.2$omega.2); gamma.2 <- mean(theta.trace.2$gamma.2)
+  alpha.2 <- mean(theta.trace.2$alpha.2); beta.2 <- mean(theta.trace.2$beta.2)
+  trace$theta.2[i,] <- c(omega.2, gamma.2, alpha.2, beta.2)
+  
+  trace$p[i] = new.p
+  
+  }
+
+
+trace.matrix = as.matrix(cbind(trace$mu.1,trace$mu.2,trace$theta.1,trace$theta.2,trace$p))
+
+```
+
+
+
+```{r trace plot,echo=FALSE,fig.height=3}
+plot(trace.matrix[,1],trace.matrix[,2],ylab=expression(mu[2]),xlab=expression(mu[1]))
+```
+
+We can see from the plot that $\mu_1$ and $\mu_2$ have negative linear correlation,it proofs the results which shown that the sum of weighted expected value is equal to 0 so that the $\mu$ need to have opposite value. 
+
+
+
+```{r diagnostics,fig.height=4}
+
+plot(density(trace.matrix[,1]), type = 'l', ylab = 'Density', xlab = expression(mu),las = 1,xlim = c(-0.06, 0.06), ylim = c(0,60),main = expression('Posterior density of'~mu),col="steelblue1")
+lines(density(trace.matrix[,2]), type = 'l',col="seagreen2")
+legend("topleft",legend=c(expression(mu[1]),expression(mu[2])),col = c("steelblue1","seagreen2"), lty=1,cex=1,bty="n")
+
+
+plot(density(trace.matrix[,11]), type = 'l', ylab = 'Density', xlab = expression(pi),
+     xlim = c(0.2,0.8), las = 1,
+     main = expression('Posterior density of'~pi),col="orange")
+lines(density(1-trace.matrix[,11]), col="orchid1")
+legend("topleft",legend=c(expression(mu[1]),expression(mu[2])),col = c("orange","orchid1"), lty=1,cex=1,bty="n")
+
+```
+
+
+
+
+
+
+```{r inference}
+
+post.inf = apply(trace.matrix,2,FUN = function(x){return(c(mean(x),quantile(x,c(0.025,0.975))))})
+row.names(post.inf)[1] = 'mean'
+colnames(post.inf) = c('mu1','mu2','omega1','gamma1','alpha1','beta1',
+                       'omega2','gamma2','alpha2','beta2','pi')
+round(post.inf, 4)
+
+
+```
+
+
+```{r acf effective sample size and plot}
+
+
+mu.mcmc <- mcmc(trace.matrix[,1:2], start = 100)
+autocorr.plot(mu.mcmc)
+effectiveSize(mu.mcmc)
+
+```
+
+
+
+
+# Conclusion
+
+
+
+# References
+
+[1] Rombouts, J. and Stentoft, L.(2014) "Bayesian option pricing using mixed normal heteroskedasticity models" 
+    in *Computational Statistics & Data Analysis*, 76,588-605
+
+[2] Standard & Poor's 500 index. Retrived from 
+    https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972&enddate=Dec+28%2C+2011&num=30&ei=dxwBWqmEFozKjAG-_IyQDQ    
+
+[3] Daily Treasury Yield Curve Rates. US Department of the Treasury. Retrived from
+    https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017
+    
+    
