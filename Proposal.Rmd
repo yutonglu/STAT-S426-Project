@@ -23,19 +23,19 @@ and what conditions we set up. Finally, in section 4, we outline the goals and a
 
 
 # 2. Model's Framework
-   Let $\mathscr{F}_t$ denote the information set up to time t. Then the underlying return process $R_t=ln(\frac{S_t}{S_{t-1}})$,where $S_t$ is the index level on each day t. Then
+   Let $\mathscr{F}_t$ denote the information set up to time t. Then the underlying return process $R_t=ln(\frac{S_t}{S_{t-1}})$, where $S_t$ is the index level on each day t. Then
 \[R_t = r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)+\epsilon_t\] 
-Since we also known each year's risk free rate $r_t$, and $\nu_t$ is the unit risk premium, $\Psi_t$ is conditional 
+Since we also know each year's risk free rate $r_t$, and $\nu_t$ is the unit risk premium, $\Psi_t$ is conditional 
 cumulant generating function of $\epsilon_t$, so we can compute their conditional distribution given by combination of $K$ distributions 
 \[P(\epsilon_t|\mathscr{F}_{t-1})=\sum_{k=1}^K {\pi_k\Phi(\frac{\epsilon_t-\mu_k}{\sigma_{k,t}})}\] where
 \[\sigma_{k,t}=\sqrt{\omega_k+\alpha(\epsilon_{t-1}+\gamma_k \sigma_{k,t-1})^2+\beta_k\sigma^2_{k,t-1}}\]
 For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
 \[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
 Also, the likelihood function given $G^T$ and $R$ is
-\[\ L(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
+\[\ \mathscr{L}(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
 We will estimate the parameters by using the Gibbs Sampler. The join posterior distribution based on the MN-NGARCH 
 model is given by 
-\[\varphi(G^T,\nu_t,\mu,\theta,\pi|R) \propto \varphi(\nu_t) \varphi(\mu) \varphi(\theta) \varphi(\pi) L(\xi|G^T,R)\]
+\[\varphi(G^T,\nu_t,\mu,\theta,\pi|R) \propto \varphi(\nu_t) \varphi(\mu) \varphi(\theta) \varphi(\pi) \mathscr{L}(\xi|G^T,R)\]
 where $\varphi(\nu_t), \varphi(\mu), \varphi(\theta), \varphi(\pi)$ are the corresponding prior densities. 
 Suppose the parameters are independent to each other. We will use full conditionals of each parameter to compute the 
 Gibbs Sampler. Through plots and diagnostic we want to verify the convergence of data and how long it will possibly 

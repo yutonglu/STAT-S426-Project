@@ -39,7 +39,7 @@ cumulant generating function of $\epsilon_t$, so we can compute their conditiona
 of $K$ normal distributions 
 \[P(\epsilon_t|\mathscr{F}_{t-1})=\sum_{k=1}^K {\pi_k\Phi(\frac{\epsilon_t-\mu_k}{\sigma_{k,t}})}\] where
 \[\sigma_{k,t}^2=\omega_k+\alpha_k(\epsilon_{t-1}+\gamma_k \sigma_{k,t-1})^2+\beta_k\sigma^2_{k,t-1}\]
-Thus, the value of $\sigma_{k,t}^2$ depends on parameters $\theta_k=(\omega_k,\gamma_k,\alpha_k,\beta_k)$ with $\omega_k>0,\alpha_k≥0,\beta_k≥0$.
+Thus, the value of $\sigma_{k,t}^2$ depends on parameters $\theta_k = (\omega_k, \gamma_k, \alpha_k, \beta_k)$ with $\omega_k > 0,\alpha_k \geq 0,\beta_k \geq 0$.
 For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
 
 \[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
@@ -48,8 +48,8 @@ Let $\pi=(\pi_1,\pi_2,...,\pi_K)$ denote the proportion of each normal model and
 In addition, we also restrict the weighted average of means from mixture normal models to zero.
 
 i.e. $\sum_{i=1}^{K}\pi_i*\mu_i=0$. So we can compute the mean of the last normal models $K$ in 
-$\mu_K=-\frac{\sum_{i=1}^{K-1}\pi_i*\mu_i}{\pi_K}$. For further analysis, we plan to use the simplest case 
-where $K=2$ and $\nu_t=0$.
+$\mu_K=-\frac{\sum_{i=1}^{K-1}\pi_i*\mu_i}{\pi_K}$. 
+For further analysis, we plan to use the simplest case where $K=2$ and $\nu_t=0$.
 
 
 ```{r load data}
@@ -80,12 +80,12 @@ for (i in 2:nrow(SP500)){
 In this project, we use data on call options on the [S&P 500 index](https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972&enddate=Dec+28%2C+2011&num=30&ei=dxwBWqmEFozKjAG-_IyQDQ). 
 Our data covers 2 years period from Jan 4 2006 to Dec,31,2007 and compute the return. 
 We also impose the following restriction on our sample: 
-First, we only consider weekly data and choose the option prices on every Wednesday since it minimizes the 
-impact from weekend trading. Second, we include  
+First, we only consider weekly data and choose the option prices on every Wednesday since it 
+minimizes the impact from weekend trading. Second, we include  
 [Daily Treasury Yield Curve Rates](https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017) 
 as the risk free rates from US Department of the Treasury corresponding to the days of option prices.
-Since the yield cruve rates are measured in an annual basis. We need to convert them to a daily basis 
-by dividing 365 which is the number of days in a year.
+Since the yield cruve rates are measured in an annual basis. We need to convert them to a daily 
+basis by dividing 365 which is the number of days in a year.
 We end up the return R with `r length(SP500)` observations.
 
 
@@ -115,9 +115,11 @@ boxplot(list(SP2006 = R[1:round(length(R)/2)],SP2007 = R[round(length(R)/2):leng
 
 ```
     
-The green dotted line represents the cut-off between the years of 2006 and 2007. Due to the Subprime mortgage crisis
- that happened in US in the year of 2007, the fluctations of return are much larger than the return in 2006, which 
- strengthens the difficulty on the precision of model prediction and inference.
+The green dotted line represents the cut-off between the years of 2006 and 2007. Due to the 
+Subprime mortgage crisis
+ that happened in US in the year of 2007, the fluctations of return are much larger than the 
+ return in 2006, 
+ which strengthens the difficulty on the precision of model prediction and inference.
  
 
 ```{r prior of mixture}
@@ -206,6 +208,37 @@ For K = 2, the posterior distribution of $G^T=i, i=1,2$ is just a Bernoulli proc
 Using the information above and compute the probability for all data, 
 `r x1` data belong to the first normal model and `r x2` data belong to the second normal model.
 
+(2) $\varphi(\pi|G^T,\nu_t,\mu,\theta,R)$
+In the simplest case with two mixture normal, the prior and posterior distributions of $\pi$
+just Beta Distribution with parameters (a, b) and (a+$x_1$, b+$x_2$) respectively
+where $x_1$ is the number of data that belong to the first normal model and 
+$x_2$ is the number of data that belong to the second normal model.
+Here, we set up a weak prior for $\pi_1$ (a = b = 1), so beta(1,1) becomes uniform[0,1].
+We can compute $\pi_2$ by subtracting $\pi_1$ from 1.
+
+(3) $\varphi(\mu|\pi,G^T,\nu_t,\theta,R)$
+To find the posterior of $\mu = (\mu_1,\mu_2)$. We only need to find the posterior distribution
+of $\mu_1$ and compute $\mu_2 = -\frac{\pi_1*\mu_1}{\pi_2}$ according to our assumptions.
+Since it's univariate, the posterior of $\mu_1$ is Normal 
+with mean $-A^{-1}b$ and variance $A^{-1}$ where 
+\[A = \sum_{(1)}\frac{1}{\sigma^2_{1,t}}+\frac{\pi_{1}^2}{\pi_{2}^2}\sum_{(2)}\frac{1}{\sigma^2_{2,t}}\]
+\[b = \frac{\pi_1}{\pi_2}\sum_{(2)}\frac{\epsilon_t}{\sigma^2_{2,t}}-\sum_{(1)}\frac{\epsilon_t}{\sigma^2_{1,t}}\]
+
+(4) $\varphi(\theta|\pi,G^T,\nu_t,\mu,R)$
+$\theta_k$ has four components which are $(\omega_k,\gamma_k,\alpha_k,\beta_k)$.
+We set up prior support for these parameters and use Metropolis Hasting to estimate them.
+Since $(\omega_k,\alpha_k,\beta_k)$ are all positive, we choose lognormal as their proposal 
+distributions and choose normal as proposal distribution for $\gamma_k$.
+
+(5) $\varphi(\nu_t|\pi,G^T,\theta,\mu,R)$
+Since we treat $\nu_t = 0$ at the beginning, we just draw one sample from uniform[0,1] and 
+find the corresponding quantile of conditional posterior distribution.
+
+In the following diagnostics or inferences, we will focus more on $\mu = (\mu_1,\mu_2)$,
+$\pi = (\pi_1, \pi_2)$, $\theta_1 = (\omega_1,\gamma_1,\alpha_1,\beta_1)$
+and $\theta_2 = (\omega_2,\gamma_2,\alpha_2,\beta_2)$.
+
+
 
 ```{r MCMC mixture}
 
@@ -213,7 +246,7 @@ repl = 100  # number of iterations for Metropolis Hasting
 n.iter = 200 # number of iterations for Gibbs
 
 trace = list(mu.1 = array(NA, dim = c(n.iter, 1)), 
-              mu.2 = array(NA, dim =c(n.iter, 1)),
+              mu.2 = array(NA, dim = c(n.iter, 1)),
               theta.1 = array(NA, dim = c(n.iter, 4)),
               theta.2 = array(NA, dim = c(n.iter, 4)),
               p = array(NA, dim = c(n.iter, 1))
@@ -321,7 +354,7 @@ for (i in 1:n.iter){
   A = sum(1/var.1) + new.p * new.p / (1-new.p)^2 * sum(1/var.2)
   b = new.p/(1-new.p)*sum(rnorm(length(var.2), mean = 0, sqrt(var.2))/var.2) - sum(rnorm(length(var.1), mean = 0, sqrt(var.1))/var.1)
   
-  new.mu1 = abs(rnorm(1,-A^(-1)*b,1/A))
+  new.mu1 = abs(rnorm(1,-A^(-1)*b,sqrt(1/A)))
   new.mu2 = -new.mu1*new.p/(1-new.p)
   
   trace$mu.1[i] = new.mu1
@@ -347,6 +380,7 @@ trace.matrix = as.matrix(cbind(trace$mu.1,trace$mu.2,trace$theta.1,trace$theta.2
 
 
 ```{r trace plot}
+
 plot(trace.matrix[,1],type = 'l',ylab=expression(mu[1]))
 plot(trace.matrix[,2],type = 'l',ylab=expression(mu[2]))
 plot(trace.matrix[,1],trace.matrix[,2],ylab=expression(mu[2]),xlab=expression(mu[1]))
@@ -359,7 +393,7 @@ plot(trace.matrix[,1],trace.matrix[,2],ylab=expression(mu[2]),xlab=expression(mu
 ```{r diagnostics}
 
 plot(density(trace.matrix[,1]), type = 'l', ylab = 'Density', xlab = expression(mu),
-     las = 1,xlim = c(-0.04, 0.04), ylim = c(0,80),
+     las = 1,xlim = c(-0.06, 0.06), ylim = c(0,60),
      main = expression('Posterior density of'~mu))
 lines(density(trace.matrix[,2]), type = 'l',col=2)
 legend('topleft',legend = c(expression(mu[1]),expression(mu[2])), 
@@ -394,7 +428,7 @@ round(post.inf, 4)
 
 mu.mcmc <- mcmc(trace.matrix[,1:2], start = 100)
 autocorr.plot(mu.mcmc)
-effectiveSize(mu.mcmc)
+# effectiveSize(mu.mcmc)
 
 ```
 
