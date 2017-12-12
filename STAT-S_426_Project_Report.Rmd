@@ -4,10 +4,11 @@ title: |
   | Baysien Option Pricing Using Mixed Normal Heteroskedasticity Models
 author: "Ashley Lu, Liang Zou"
 date: "11/28/2017"
-output: 
+output:
+  html_document: default
   pdf_document:
-     includes:
-        in_header: ApproxRegMacros.tex
+    includes:
+      in_header: ApproxRegMacros.tex
 ---
 
 
@@ -27,7 +28,7 @@ The option pricing using asymmetric mixed normal heteroscedasticitic models help
 
 # 2. Model's Framework
 
-   Let $\mathscr{F}_t$ denote the information set up to time t. Then the underlying return process $R_t=ln(\frac{S_t}{S_{t-1}})$, where $S_t$ is the index level on each day t. Then
+Let $\mathscr{F}_t$ denote the information set up to time t. Then the underlying return process $R_t=ln(\frac{S_t}{S_{t-1}})$, where $S_t$ is the index level on each day t. Then
 \[R_t = r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)+\epsilon_t\] 
 Since we also know each year's risk free rate $r_t$, and $\nu_t$ is the unit risk premium, $\Psi_t$ is conditional cumulant generating function of $\epsilon_t$, so we can compute their conditional distribution given by combination of $K$ normal distributions 
 \[P(\epsilon_t|\mathscr{F}_{t-1})=\sum_{k=1}^K {\pi_k\Phi(\frac{\epsilon_t-\mu_k}{\sigma_{k,t}})}\] where
@@ -62,8 +63,7 @@ for (i in 2:nrow(SP500)){
 
 # 3. Data for S&P 500 Index
 In this project, we use data on call options on the [S&P 500 index](https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972&enddate=Dec+28%2C+2011&num=30&ei=dxwBWqmEFozKjAG-_IyQDQ). Our data covers 2 years period from Jan 4 2006 to Dec,31,2007 and compute the return. We also impose the following restriction on our sample: First, we only consider weekly data and choose the option prices on every Wednesday since it minimizes the impact from weekend trading. Second, we include [Daily Treasury Yield Curve Rates](https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yieldYear&year=2017) 
-as the risk free rates from US Department of the Treasury corresponding to the days of option prices.Since the yield cruve rates are measured in an annual basis. We need to convert them to a daily basis by dividing 365 which is the number of days in a year.
-We end up the return R with `r length(SP500)` observations.
+as the risk free rates from US Department of the Treasury corresponding to the days of option prices.Since the yield cruve rates are measured in an annual basis. We need to convert them to a daily basis by dividing 365 which is the number of days in a year. We end up the return R with `r length(R)` observations.
 
 
 ```{r plot of R,fig.cap="The return process of R",echo=FALSE,fig.pos='H',fig.width=8}
@@ -72,9 +72,10 @@ abline(h=0,col="green2",lty=2)
 ```
 
 
+Due to the Subprime mortgage crisis that happened in US in the year of 2007, the fluctations of return are much larger than the return in 2006, which strengthens the difficulty on the precision of model prediction and inference. 
+We can see the mean of R generally holds on a constant level around zero (the dotted horizontal line in the plot) 
+but the variance increased a lot in 2007 than 2006. 
 
-Due to the Subprime mortgage crisis that happened in US in the year of 2007, the fluctations of return are much larger than the return in 2006, which strengthens the difficulty on the precision of model prediction and inference.We can 
-see the mean of R generally hold on a constant level but the variance increased a lot on 2007 than 2006. 
 
 ```{r boxplot ,fig.cap="Density plot for R in total and each year",echo=FALSE,fig.pos='H'}
 plot(density(R),las = 1, xlab = 'R', ylim = c(0, 35),col="blue1",main="Density plot for R")
@@ -83,11 +84,12 @@ lines(density(R[(length(R)/2+1):length(R)]), col = "green4")
 legend("topleft",legend=c("Rtotal","R2006","R2007"),col = c("blue1","lightcoral","green4"), lty=1,cex=1,bty="n")
 ```
  
-The density plot for the total number of R and R for 2006 and 2007 are pretty much looks similiar,the number of R in 2006 and total plots of each year are left skewed and the large part of data greater than mean.The value of R in 2007 looks quite normal and they both looks similar than multinormal distribution.
+The density plots for the total R and R for 2006 and 2007 are pretty much similiar, the number of R in 2006 and total plots of each year are left skewed and the large part of data is greater than the mean zero. The value of R in 2007 looks quite normal and they both look similar than multinormal distribution. Combining with the traceplot of R, 
+we may assume this two-mixture model are settled around the mean of zero, one of which has a positive mean 
+and the other has a negative mean.
 
 
 
-# 4 Initial Estimate
 ```{r,echo=FALSE}
 # K = # of mixture normal models 
 # T = total # of days
@@ -102,9 +104,6 @@ s2 = c(0.0001, 0.0002)
 p = c(0.6, 0.4)
 K = 2 # the number of mixed normal models
 ```
-
-For a two-mixture normal model, we set up some information for $\mu=(0.008,-0.012)$ , 
-$\sigma^{2}=(1e-04,2e-04)$  and $\pi$ = (`r p`). The mixture density seems close to the real density especially when the return is positive. Thus, we may begin our following computations based on this model.
 
 
 ```{r conditional cumulant generating function,echo=FALSE}
@@ -143,7 +142,10 @@ for (i in 1:length(R)){
 # c(x1, x2)
 ```
 
-# 5 Bayesian Inference
+# 4 Bayesian Inference
+
+For a two-mixture normal model, we set up some information for $\mu=(0.008,-0.012)$ , 
+$\sigma^{2}=(1e-04,2e-04)$  and $\pi$ = (`r p`). We will begin our following computations based on this prior information.
 
 The likelihood function given $G^T$ and $R$ is
 \[\ \mathscr{L}(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
@@ -173,7 +175,7 @@ $\theta_k$ has four components which are $(\omega_k,\gamma_k,\alpha_k,\beta_k)$.
 (5) $\varphi(\nu_t|\pi,G^T,\theta,\mu,R)$
 Since we treat $\nu_t = 0$ at the beginning, we just draw one sample from uniform[0,1] and find the corresponding quantile of conditional posterior distribution.
 
-In the following diagnostics or inferences, we will focus more on $\mu = (\mu_1,\mu_2)$,$\pi = (\pi_1, \pi_2)$, $\theta_1 = (\omega_1,\gamma_1,\alpha_1,\beta_1)$and $\theta_2 = (\omega_2,\gamma_2,\alpha_2,\beta_2)$.
+In the following diagnostics or inferences, we will focus more on $\mu = (\mu_1,\mu_2)$,$\pi = (\pi_1, \pi_2)$, $\theta_1 = (\omega_1,\gamma_1,\alpha_1,\beta_1)$ and $\theta_2 = (\omega_2,\gamma_2,\alpha_2,\beta_2)$.
 
 
 ```{r MCMC mixture,echo=FALSE}
@@ -321,7 +323,7 @@ plot(trace.matrix[,1],trace.matrix[,2],ylab=expression(mu[2]),xlab=expression(mu
 ```
 
 We can see from the plot that $\mu_1$ and $\mu_2$ have negative linear correlation, it proves the results 
-that the sum of weighted expected value is equal to 0 so that the $\mu$s' need to have opposite sides. 
+that the sum of weighted expected value is equal to zero so that the $\mu$s' need to have opposite sides. 
 
 
 
@@ -361,7 +363,7 @@ colnames(post.inf) = c('mu1','mu2','omega1','gamma1','alpha1','beta1',
 ```
 
 
-```{r acf effective sample size and plot}
+```{r acf effective sample size and plot,fig.cap="Autocorrelation for mu1 and mu2"}
 mu.mcmc <- mcmc(trace.matrix[,1:2], start = 100)
 autocorr.plot(mu.mcmc,las=1)
 effectiveSize(mu.mcmc)
@@ -372,8 +374,26 @@ The autocorrelation drops significantly after a few iterations in the plots of M
 In addition, the effective sample sizes of both parameters are greater than 9000 out of 10,000 total iterations, 
 which is a quite appropriate result of independence.
 
-# Conclusion
+# Discussion
 
+(1) In the years of 2006 and 2007, the negative component of mixture normal donomiates the entire model because of 
+its larger $\pi_2$. This implies the larger chance of losing money in options investment. The posterior proportion 
+is contradictory to our prior information that we assume the weight of positive normal ought to be greater. However, 
+a number of speculators are still able to make profits from this financial negative markets since the posterior of 
+$\pi_1$ is approximately 40 percent. 
+
+(2) Some disadvantages of our mixture model: Due to the complexity of financial market, the two component normal 
+mixture model may not be precise enough to reflect the behaviors of industry. An alternative way is to break down 
+positive and negative normal models into several sub normal models and devote more weights into these new models. 
+But overall, the negative portion of this mixture model is more significant.
+
+(3) The relation among variances on each day: We utilize the equation between $\sigma^2_{k,t}$ and $\sigma^2_{k,t-1}$
+ from Rombouts and Stentoft's paper where there are four coefficents controlling the growth of variance. 
+ The effectiveness of this equation remains in doubt, we can not figure out the reasons of setting up that equation. 
+
+(4) Limited stress on time series data: We conduct many techniques in Bayesian Statistics especially in Markov 
+Chain Monte Carlo Method. Unfortunately, we may overlook several assumptions or basic methods of analyzing 
+time series data. This could be a further direction we can work on to improve the accuracy of our model.
 
 
 # References
