@@ -354,7 +354,9 @@ round(post.inf, 4)
 ```
 
 
+
 ```{r acf effective sample size and plot}
+
 mu.mcmc <- mcmc(trace.matrix[,1:2], start = 100)
 autocorr.plot(mu.mcmc,las=1)
 effectiveSize(mu.mcmc)
@@ -365,6 +367,7 @@ effectiveSize(mu.mcmc)
 
 
 # Conclusion
+
 
 
 
