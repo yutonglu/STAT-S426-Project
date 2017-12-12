@@ -5,6 +5,7 @@ title: |
 author: "Ashley Lu, Liang Zou"
 date: "11/28/2017"
 output:
+  html_document: default
   pdf_document:
     includes:
       in_header: ApproxRegMacros.tex
