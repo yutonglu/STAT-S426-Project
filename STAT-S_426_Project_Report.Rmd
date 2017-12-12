@@ -22,35 +22,21 @@ set.seed(20171211)
 
 # 1. Introduction
 
-The option pricing using asymmetric mixed normal heteroscedasticitic models helps us better fit actual observed
-prices. We consider performing inferences and price options in a Baysian framework through computing posterior
-moments of the model parameters by sampling from the poterior density. Unlike classical inference that need
-conditions on maximum likelihood estimation, the MCMC (Markov Chain Monte Carlo) method utilizes the risk neutral
-predicitve price densities by product of the Gibbs sampler. An application is using the real data on the S&P 500
-index and index options. We plan to perform Baysien inferences on a two-component asymmetric mixture normal 
-by using the data between 2006 and 2007. 
+The option pricing using asymmetric mixed normal heteroscedasticitic models helps us better fit actual observed prices. We consider performing inferences and price options in a Baysian framework through computing posterior moments of the model parameters by sampling from the poterior density. Unlike classical inference that need conditions on maximum likelihood estimation, the MCMC (Markov Chain Monte Carlo) method utilizes the risk neutral predicitve price densities by product of the Gibbs sampler. An application is using the real data on the S&P 500 index and index options. We plan to perform Baysien inferences on a two-component asymmetric mixture normal by using the data between 2006 and 2007. 
 
 
 # 2. Model's Framework
 
    Let $\mathscr{F}_t$ denote the information set up to time t. Then the underlying return process $R_t=ln(\frac{S_t}{S_{t-1}})$, where $S_t$ is the index level on each day t. Then
 \[R_t = r_t-\Psi_t(\nu_t-1)+\Psi_t(\nu_t)+\epsilon_t\] 
-Since we also know each year's risk free rate $r_t$, and $\nu_t$ is the unit risk premium, $\Psi_t$ is conditional 
-cumulant generating function of $\epsilon_t$, so we can compute their conditional distribution given by combination 
-of $K$ normal distributions 
+Since we also know each year's risk free rate $r_t$, and $\nu_t$ is the unit risk premium, $\Psi_t$ is conditional cumulant generating function of $\epsilon_t$, so we can compute their conditional distribution given by combination of $K$ normal distributions 
 \[P(\epsilon_t|\mathscr{F}_{t-1})=\sum_{k=1}^K {\pi_k\Phi(\frac{\epsilon_t-\mu_k}{\sigma_{k,t}})}\] where
 \[\sigma_{k,t}^2=\omega_k+\alpha_k(\epsilon_{t-1}+\gamma_k \sigma_{k,t-1})^2+\beta_k\sigma^2_{k,t-1}\]
 Thus, the value of $\sigma_{k,t}^2$ depends on parameters $\theta_k = (\omega_k, \gamma_k, \alpha_k, \beta_k)$ with $\omega_k > 0,\alpha_k \geq 0,\beta_k \geq 0$.
 For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
 
 \[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
-where $\mu_k$ is the average return on day t. 
-Let $\pi=(\pi_1,\pi_2,...,\pi_K)$ denote the proportion of each normal model and $\sum_{i=1}^{K}\pi_i=1$
-In addition, we also restrict the weighted average of means from mixture normal models to zero.
-
-i.e. $\sum_{i=1}^{K}\pi_i*\mu_i=0$. So we can compute the mean of the last normal models $K$ in 
-$\mu_K=-\frac{\sum_{i=1}^{K-1}\pi_i*\mu_i}{\pi_K}$. 
-For further analysis, we plan to use the simplest case where $K=2$ and $\nu_t=0$.
+where $\mu_k$ is the average return on day t. Let $\pi=(\pi_1,\pi_2,...,\pi_K)$ denote the proportion of each normal model and $\sum_{i=1}^{K}\pi_i=1$.In addition, we also restrict the weighted average of means from mixture normal models to zero.i.e. $\sum_{i=1}^{K}\pi_i*\mu_i=0$. So we can compute the mean of the last normal models $K$ in $\mu_K=-\frac{\sum_{i=1}^{K-1}\pi_i*\mu_i}{\pi_K}$. For further analysis, we plan to use the simplest case where $K=2$ and $\nu_t=0$.
 
 
 ```{r load data,echo=FALSE}
@@ -80,17 +66,16 @@ as the risk free rates from US Department of the Treasury corresponding to the d
 We end up the return R with `r length(SP500)` observations.
 
 
-```{r plot of R,fig.cap="The return process of R",echo=FALSE,fig.pos='H'}
+```{r plot of R,fig.cap="The return process of R",echo=FALSE,fig.pos='H',fig.width=8}
 plot(R, type = 'l', las = 1,main="Traceplot for R")
 abline(h=0,col="green2",lty=2)
 ```
 
 
+
 Due to the Subprime mortgage crisis that happened in US in the year of 2007, the fluctations of return are much larger than the return in 2006, which strengthens the difficulty on the precision of model prediction and inference.We can 
 see the mean of R generally hold on a constant level but the variance increased a lot on 2007 than 2006. 
 
-
- 
 ```{r boxplot ,fig.cap="Density plot for R in total and each year",echo=FALSE,fig.pos='H'}
 plot(density(R),las = 1, xlab = 'R', ylim = c(0, 35),col="blue1",main="Density plot for R")
 lines(density(R[1:(length(R)/2)]), col = "lightcoral")
@@ -118,9 +103,7 @@ p = c(0.6, 0.4)
 K = 2 # the number of mixed normal models
 ```
 
-For a two-mixture normal model, we randomly set up some information for $\mu=(0.008,-0.012)$ , $\sigma^{2}=(1e-04,2e-04)$  
-and $\pi$ = (`r p`). The mixture density seems close to the real density especially when the return is positive. 
-Thus, we may begin our following computations based on this model.
+For a two-mixture normal model, we randomly set up some information for $\mu=(0.008,-0.012)$ , $\sigma^{2}=(1e-04,2e-04)$  and $\pi$ = (`r p`). The mixture density seems close to the real density especially when the return is positive. Thus, we may begin our following computations based on this model.
 
 
 ```{r conditional cumulant generating function,echo=FALSE}
@@ -159,7 +142,7 @@ for (i in 1:length(R)){
 # c(x1, x2)
 ```
 
-# 5 Bayesian inference
+# 5 Bayesian Inference
 
 The likelihood function given $G^T$ and $R$ is
 \[\ \mathscr{L}(\xi|G^T,R) = \prod_{t=1}^T \pi_{G_t}\phi(R_t|\mu_{G_t}+\rho_t(\nu_t),\theta_{G_t})\]
@@ -335,22 +318,22 @@ trace.matrix = as.matrix(cbind(trace$mu.1,trace$mu.2,trace$theta.1,trace$theta.2
 plot(trace.matrix[,1],trace.matrix[,2],ylab=expression(mu[2]),xlab=expression(mu[1]))
 ```
 
-We can see from the plot that $\mu_1$ and $\mu_2$ have negative linear correlation,it proofs the results which shown that the sum of weighted expected value is equal to 0 so that the $\mu$ need to have opposite value. 
+We can see from the plot that $\mu_1$ and $\mu_2$ have negative linear correlation,it proofs the results which shown that the sum of weighted expected value is equal to 0 so that the $\mu$s' need to have opposite value. 
 
 
 
 ```{r diagnostics,fig.height=4}
 
 plot(density(trace.matrix[,1]), type = 'l', ylab = 'Density', xlab = expression(mu),las = 1,xlim = c(-0.06, 0.06), ylim = c(0,60),main = expression('Posterior density of'~mu),col="steelblue1")
-lines(density(trace.matrix[,2]), type = 'l',col="seagreen2")
-legend("topleft",legend=c(expression(mu[1]),expression(mu[2])),col = c("steelblue1","seagreen2"), lty=1,cex=1,bty="n")
+lines(density(trace.matrix[,2]), type = 'l',col="orange")
+legend("topleft",legend=c(expression(mu[1]),expression(mu[2])),col = c("steelblue1","orange"), lty=1,cex=1,bty="n")
 
 
 plot(density(trace.matrix[,11]), type = 'l', ylab = 'Density', xlab = expression(pi),
      xlim = c(0.2,0.8), las = 1,
-     main = expression('Posterior density of'~pi),col="orange")
+     main = expression('Posterior density of'~pi),col="forestgreen")
 lines(density(1-trace.matrix[,11]), col="orchid1")
-legend("topleft",legend=c(expression(mu[1]),expression(mu[2])),col = c("orange","orchid1"), lty=1,cex=1,bty="n")
+legend("topleft",legend=c(expression(pi[1]),expression(pi[2])),col = c("forestgreen","orchid1"), lty=1,cex=1,bty="n")
 
 ```
 
@@ -372,10 +355,8 @@ round(post.inf, 4)
 
 
 ```{r acf effective sample size and plot}
-
-
 mu.mcmc <- mcmc(trace.matrix[,1:2], start = 100)
-autocorr.plot(mu.mcmc)
+autocorr.plot(mu.mcmc,las=1)
 effectiveSize(mu.mcmc)
 
 ```
