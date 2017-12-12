@@ -35,7 +35,7 @@ Since we also know each year's risk free rate $r_t$, and $\nu_t$ is the unit ris
 Thus, the value of $\sigma_{k,t}^2$ depends on parameters $\theta_k = (\omega_k, \gamma_k, \alpha_k, \beta_k)$ with $\omega_k > 0,\alpha_k \geq 0,\beta_k \geq 0$.
 For the above model, the conditional cumulant generating function $\Psi_t(u)$ the model of asymmetric heteroskedastic normal mixture(MN-NGARCH), given by,
 
-\[\Psi_t(u) = ln(\sum_{k=1}^K \pi_i*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
+\[\Psi_t(u) = ln(\sum_{k=1}^K \pi_k*exp(-u\mu_k+\frac{u^2\sigma^2_{k,t}}{2}))\]
 where $\mu_k$ is the average return on day t. Let $\pi=(\pi_1,\pi_2,...,\pi_K)$ denote the proportion of each normal model and $\sum_{i=1}^{K}\pi_i=1$.In addition, we also restrict the weighted average of means from mixture normal models to zero.i.e. $\sum_{i=1}^{K}\pi_i*\mu_i=0$. So we can compute the mean of the last normal models $K$ in $\mu_K=-\frac{\sum_{i=1}^{K-1}\pi_i*\mu_i}{\pi_K}$. For further analysis, we plan to use the simplest case where $K=2$ and $\nu_t=0$.
 
 
@@ -379,7 +379,7 @@ which is a quite appropriate result of independence.
 
 # Discussion
 
-(1) In the years of 2006 and 2007, the negative component of mixture normal donomiates the entire model because of 
+(1) In the years of 2006 and 2007, the negative component of mixture normal dominates the entire model because of 
 its larger $\pi_2$. This implies the larger chance of losing money in options investment. The posterior proportion 
 is contradictory to our prior information that we assume the weight of positive normal ought to be greater. However, 
 a number of speculators are still able to make profits from this financial negative markets since the posterior of 
