@@ -381,8 +381,7 @@ which is a quite appropriate result of independence.
 
 # References
 
-[1] Rombouts, J. and Stentoft, L.(2014) "Bayesian option pricing using mixed normal heteroskedasticity models" 
-    in *Computational Statistics & Data Analysis*, 76,588-605
+[1] Rombouts, J. and Stentoft, L.(2014) "Bayesian option pricing using mixed normal heteroskedasticity models" in *Computational Statistics & Data Analysis*, 76,588-605
 
 [2] Standard & Poor's 500 index. Retrived from 
     https://finance.google.com/finance/historical?cid=626307&startdate=Jul+2%2C+1972&enddate=Dec+28%2C+2011&num=30&ei=dxwBWqmEFozKjAG-_IyQDQ    
