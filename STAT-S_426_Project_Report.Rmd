@@ -103,7 +103,8 @@ p = c(0.6, 0.4)
 K = 2 # the number of mixed normal models
 ```
 
-For a two-mixture normal model, we randomly set up some information for $\mu=(0.008,-0.012)$ , $\sigma^{2}=(1e-04,2e-04)$  and $\pi$ = (`r p`). The mixture density seems close to the real density especially when the return is positive. Thus, we may begin our following computations based on this model.
+For a two-mixture normal model, we set up some information for $\mu=(0.008,-0.012)$ , 
+$\sigma^{2}=(1e-04,2e-04)$  and $\pi$ = (`r p`). The mixture density seems close to the real density especially when the return is positive. Thus, we may begin our following computations based on this model.
 
 
 ```{r conditional cumulant generating function,echo=FALSE}
@@ -315,10 +316,12 @@ trace.matrix = as.matrix(cbind(trace$mu.1,trace$mu.2,trace$theta.1,trace$theta.2
 
 
 ```{r trace plot,echo=FALSE,fig.height=3}
-plot(trace.matrix[,1],trace.matrix[,2],ylab=expression(mu[2]),xlab=expression(mu[1]))
+plot(trace.matrix[,1],trace.matrix[,2],ylab=expression(mu[2]),xlab=expression(mu[1]),
+     main = expression('Joint posterior of'~mu))
 ```
 
-We can see from the plot that $\mu_1$ and $\mu_2$ have negative linear correlation,it proofs the results which shown that the sum of weighted expected value is equal to 0 so that the $\mu$s' need to have opposite value. 
+We can see from the plot that $\mu_1$ and $\mu_2$ have negative linear correlation, it proves the results 
+that the sum of weighted expected value is equal to 0 so that the $\mu$s' need to have opposite sides. 
 
 
 
@@ -337,18 +340,22 @@ legend("topleft",legend=c(expression(pi[1]),expression(pi[2])),col = c("forestgr
 
 ```
 
+The plot of posterior density of $\mu$ shows the peak of $\mu_2$ is slightly less than zero and the peak of $\mu_1$ 
+is greater than zero. And the density of $\mu_2$ is more condensed. This may be due to the proportion of the second 
+normal model with negative $\mu$ i.e. $\pi_2$ is greater.
 
-
-
-
-
+The plot of posterior density of $\pi$ is symmetric with respect to 0.5, since the sum of $\pi_1$ and $\pi_2$ equals
+ to 1. The peak of $\pi_2$ is slightly greater than 0.6 which implies the weight of the second normal model is 
+larger. This shows in the era of financial crisis, it's more likely to lose money due to the larger possibility 
+of negative return rate.
+ 
+ 
 ```{r inference}
-
 post.inf = apply(trace.matrix,2,FUN = function(x){return(c(mean(x),quantile(x,c(0.025,0.975))))})
 row.names(post.inf)[1] = 'mean'
 colnames(post.inf) = c('mu1','mu2','omega1','gamma1','alpha1','beta1',
                        'omega2','gamma2','alpha2','beta2','pi')
-round(post.inf, 4)
+# round(post.inf, 4)
 
 
 ```
@@ -361,8 +368,9 @@ effectiveSize(mu.mcmc)
 
 ```
 
-
-
+The autocorrelation drops significantly after a few iterations in the plots of MC $\mu_1$ and $\mu_2$. 
+In addition, the effective sample sizes of both parameters are greater than 9000 out of 10,000 total iterations, 
+which is a quite appropriate result of independence.
 
 # Conclusion
 
