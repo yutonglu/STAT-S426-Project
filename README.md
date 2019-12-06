@@ -1,5 +1,4 @@
-# STAT-S426-Project 
-## Bayesian option pricing using mixed normal heteroskedasticity models.
+# STAT-S426 Final Project: Bayesian option pricing using mixed normal heteroskedasticity models.
 
 ## Useful Link
 * URL for paper
